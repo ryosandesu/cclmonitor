@@ -1,0 +1,23 @@
+# Build artifacts
+bin/
+
+# Nix
+.direnv/
+
+# Runtime files
+*.db
+*.log
+
+# macOS
+.DS_Store
+
+# Personal notes
+memo.md
+task.md
+
+# Internal design docs
+docs/
+
+# Claude Code (developer-specific)
+.claude/
+CLAUDE.md

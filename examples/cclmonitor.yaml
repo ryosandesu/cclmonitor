@@ -1,0 +1,36 @@
+mode: prod   # prod | dev
+             # dev: allow に該当した場合も毎回通知する（ポリシーの確認用）
+
+notify:
+  channels: [osascript, logfile]
+  logdir: ~/.claude/logs        # ログ保存先（省略時: ~/.claude/）
+  dbdir: ~/.claude              # dedup 用 SQLite DB の保存先
+  dedup_window_sec: 60          # 同一イベントを何秒間抑制するか（0 で無効）
+  retain_days: 30               # ログファイルを何日間保持するか
+
+rules:
+  Bash:
+    allow:
+      - regex: '^(ls|pwd|cat|grep|echo|git\s+(?:status|log|diff|branch))\b'
+    deny:
+      - regex: '\brm\s+-rf\s+/'
+      - regex: '\bcurl\b.*\|\s*(ba)?sh\b'
+
+  Edit:
+    allow:
+      - glob: '<cwd>/**/*.{ts,go,py,md}'
+    deny:
+      - glob: '**/.env*'
+      - glob: '**/*secret*'
+
+  Write:
+    deny:
+      - glob: '**/.env*'
+      - glob: '/etc/**'
+
+  Read:
+    allow:
+      - glob: '<cwd>/**'
+    deny:
+      - glob: '**/.ssh/**'
+      - glob: '**/.gnupg/**'
