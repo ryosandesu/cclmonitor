@@ -20,10 +20,27 @@ func writeCfg(t *testing.T, dir, content string) string {
 func bashPayload(cmd, cwd, session string) string {
 	input, _ := json.Marshal(map[string]string{"command": cmd})
 	p := map[string]any{
-		"tool_name":  "Bash",
-		"tool_input": json.RawMessage(input),
-		"cwd":        cwd,
-		"session_id": session,
+		"tool_name":   "Bash",
+		"tool_input":  json.RawMessage(input),
+		"cwd":         cwd,
+		"session_id":  session,
+		"tool_use_id": "toolu_test01",
+	}
+	b, _ := json.Marshal(p)
+	return string(b)
+}
+
+func bashPayloadInterrupted(cmd, cwd, session string) string {
+	input, _ := json.Marshal(map[string]string{"command": cmd})
+	p := map[string]any{
+		"tool_name":   "Bash",
+		"tool_input":  json.RawMessage(input),
+		"cwd":         cwd,
+		"session_id":  session,
+		"tool_use_id": "toolu_test01",
+		"tool_response": map[string]any{
+			"interrupted": true,
+		},
 	}
 	b, _ := json.Marshal(p)
 	return string(b)
@@ -83,7 +100,7 @@ rules:
 	}
 }
 
-func TestRun_AllowReturns0WithNoLog(t *testing.T) {
+func TestRun_AllowWritesPendingLog(t *testing.T) {
 	dir := t.TempDir()
 	logDir := filepath.Join(dir, "logs")
 	cfgPath := writeCfg(t, dir, `
@@ -98,15 +115,13 @@ rules:
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}
-	if _, err := os.ReadDir(logDir); err == nil {
-		entries, _ := os.ReadDir(logDir)
-		if len(entries) > 0 {
-			t.Error("PreToolUse should not write log for allow verdict")
-		}
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "pending") {
+		t.Errorf("log should contain 'pending', got: %s", data)
 	}
 }
 
-func TestRun_UnknownReturns0WithNoLog(t *testing.T) {
+func TestRun_UnknownWritesPendingLog(t *testing.T) {
 	dir := t.TempDir()
 	logDir := filepath.Join(dir, "logs")
 	cfgPath := writeCfg(t, dir, `
@@ -121,11 +136,9 @@ rules:
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}
-	if _, err := os.ReadDir(logDir); err == nil {
-		entries, _ := os.ReadDir(logDir)
-		if len(entries) > 0 {
-			t.Error("PreToolUse should not write log for unknown verdict")
-		}
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "pending") {
+		t.Errorf("log should contain 'pending', got: %s", data)
 	}
 }
 
@@ -180,6 +193,44 @@ rules:
 	data := readTodayLog(t, logDir)
 	if !strings.Contains(string(data), "unknown") {
 		t.Errorf("log should contain 'unknown', got: %s", data)
+	}
+}
+
+func TestRunPost_LogsToolUseID(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	runPost(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
+
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "toolu_test01") {
+		t.Errorf("log should contain tool_use_id, got: %s", data)
+	}
+}
+
+func TestRunPost_InterruptedWritesInterruptedLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	runPost(strings.NewReader(bashPayloadInterrupted("ls -la", dir, "s1")), cfgPath)
+
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "interrupted") {
+		t.Errorf("log should contain 'interrupted', got: %s", data)
 	}
 }
 

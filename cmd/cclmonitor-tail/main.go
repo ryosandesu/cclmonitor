@@ -19,17 +19,22 @@ const (
 	colorRed    = "\033[31m"
 	colorGreen  = "\033[32m"
 	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
 	colorCyan   = "\033[36m"
 )
 
 func verdictColor(verdict string) string {
 	switch verdict {
-	case "allow":
+	case "executed":
 		return colorGreen
-	case "deny":
+	case "denied":
 		return colorRed
 	case "unknown":
 		return colorYellow
+	case "interrupted":
+		return colorCyan
+	case "pending":
+		return colorBlue
 	default:
 		return colorReset
 	}

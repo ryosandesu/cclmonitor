@@ -9,14 +9,15 @@
 
 ```
 Claude Code  →  PreToolUse hook (cclmonitor)
-                    deny?  → log "denied" + exit 2  (tool blocked)
-                    else   → exit 0
+                    deny?          → log "denied" + exit 2  (tool blocked)
+                    allow/unknown? → log "pending" + exit 0
 
-             →  tool executes
+             →  tool executes (or user cancels → PostToolUse never fires)
 
              →  PostToolUse hook (cclmonitor post)
-                    allow?   → log "executed"
-                    unknown? → log "unknown"
+                    interrupted? → log "interrupted"
+                    allow?       → log "executed"
+                    unknown?     → log "unknown"
 ```
 
 ---
@@ -24,7 +25,7 @@ Claude Code  →  PreToolUse hook (cclmonitor)
 ## Features
 
 - **Block by policy** — regex or glob rules per tool type; `deny` wins over `allow`
-- **Three-verdict audit log** — `executed` / `denied` / `unknown`, date-rotated JSONL files
+- **Five-verdict audit log** — `pending` / `executed` / `denied` / `unknown` / `interrupted`, date-rotated JSONL files
 - **Accurate execution record** — PostToolUse hook confirms the tool actually ran
 - **Project overrides** — per-repo `.claude/cclmonitor.yaml` merges with global config
 - **Dry-run mode** — `cclmonitor test` evaluates a value without blocking anything
@@ -176,7 +177,7 @@ cclmonitor-tail
 14:32:10 [unknown ] Write: /tmp/output.txt
 ```
 
-<span style="color:green">■</span> green = executed &nbsp; <span style="color:red">■</span> red = denied &nbsp; <span style="color:#b5a000">■</span> yellow = unknown
+<span style="color:green">■</span> green = executed &nbsp; <span style="color:red">■</span> red = denied &nbsp; <span style="color:#b5a000">■</span> yellow = unknown &nbsp; <span style="color:cyan">■</span> cyan = interrupted &nbsp; <span style="color:blue">■</span> blue = pending
 
 ---
 
@@ -200,9 +201,13 @@ Each line is a JSON object:
 
 | Verdict | When | Hook |
 |---------|------|------|
-| `executed` | allow rule matched, tool ran | PostToolUse |
+| `pending` | allow/unknown — tool about to execute (or user will cancel) | PreToolUse |
+| `executed` | allow rule matched, tool ran to completion | PostToolUse |
 | `denied` | deny rule matched, tool blocked | PreToolUse |
-| `unknown` | no rule matched, tool ran | PostToolUse |
+| `unknown` | no rule matched, tool ran to completion | PostToolUse |
+| `interrupted` | tool started but was stopped mid-execution (e.g. Ctrl+C) | PostToolUse |
+
+A `pending` entry with no matching `tool_use_id` in PostToolUse means the user cancelled at the confirmation prompt.
 
 ---
 

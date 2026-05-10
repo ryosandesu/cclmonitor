@@ -5,11 +5,17 @@ import (
 	"io"
 )
 
+type ToolResponse struct {
+	Interrupted bool `json:"interrupted"`
+}
+
 type HookPayload struct {
-	ToolName  string          `json:"tool_name"`
-	ToolInput json.RawMessage `json:"tool_input"`
-	Cwd       string          `json:"cwd"`
-	SessionID string          `json:"session_id"`
+	ToolName     string          `json:"tool_name"`
+	ToolInput    json.RawMessage `json:"tool_input"`
+	Cwd          string          `json:"cwd"`
+	SessionID    string          `json:"session_id"`
+	ToolUseID    string          `json:"tool_use_id"`
+	ToolResponse ToolResponse    `json:"tool_response"`
 }
 
 type BashInput struct {

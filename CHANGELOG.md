@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.3.0] - 2026-05-11
+
+### Added
+- `pending` verdict: PreToolUse logs allow/unknown calls before execution; unmatched `pending` (no PostToolUse) indicates user cancelled at confirmation prompt
+- `interrupted` verdict: PostToolUse logs `"interrupted"` when a tool is stopped mid-execution
+- `tool_use_id` field in all log entries — enables correlation of Pre/PostToolUse pairs
+
+### Fixed
+- `CleanOldLogs` deleted files one day late in non-UTC timezones
+
+### Changed
+- `cclmonitor-tail` verdict colors corrected to match actual verdict strings (`executed`, `denied`, etc.)
+- `cclmonitor-tail` adds blue for `pending`, cyan for `interrupted`
+
 ## [v0.2.0] - 2026-05-10
 
 ### Added

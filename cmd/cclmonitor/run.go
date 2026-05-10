@@ -33,12 +33,22 @@ func run(r io.Reader, globalCfgPath string) int {
 		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
 			Time:      time.Now(),
 			SessionID: payload.SessionID,
+			ToolUseID: payload.ToolUseID,
 			ToolName:  payload.ToolName,
 			Value:     value,
 			Verdict:   "denied",
 		})
 		return 2
 	}
+
+	_ = eventlog.Write(cfg.EventLog, eventlog.Event{
+		Time:      time.Now(),
+		SessionID: payload.SessionID,
+		ToolUseID: payload.ToolUseID,
+		ToolName:  payload.ToolName,
+		Value:     value,
+		Verdict:   "pending",
+	})
 	return 0
 }
 
@@ -66,6 +76,18 @@ func runPost(r io.Reader, globalCfgPath string) int {
 		return 0
 	}
 
+	if payload.ToolResponse.Interrupted {
+		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
+			Time:      time.Now(),
+			SessionID: payload.SessionID,
+			ToolUseID: payload.ToolUseID,
+			ToolName:  payload.ToolName,
+			Value:     value,
+			Verdict:   "interrupted",
+		})
+		return 0
+	}
+
 	v := "executed"
 	if verdict == match.Unknown {
 		v = "unknown"
@@ -74,6 +96,7 @@ func runPost(r io.Reader, globalCfgPath string) int {
 	_ = eventlog.Write(cfg.EventLog, eventlog.Event{
 		Time:      time.Now(),
 		SessionID: payload.SessionID,
+		ToolUseID: payload.ToolUseID,
 		ToolName:  payload.ToolName,
 		Value:     value,
 		Verdict:   v,

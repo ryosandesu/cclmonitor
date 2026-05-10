@@ -14,6 +14,7 @@ import (
 type Event struct {
 	Time      time.Time `json:"time"`
 	SessionID string    `json:"session_id"`
+	ToolUseID string    `json:"tool_use_id"`
 	ToolName  string    `json:"tool_name"`
 	Value     string    `json:"value"`
 	Verdict   string    `json:"verdict"`
@@ -58,7 +59,8 @@ func CleanOldLogs(dir string, retainDays int) {
 	if err != nil {
 		return
 	}
-	cutoff := time.Now().AddDate(0, 0, -retainDays)
+	cy, cm, cd := time.Now().AddDate(0, 0, -retainDays).Date()
+	cutoff := time.Date(cy, cm, cd, 0, 0, 0, 0, time.Local)
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
@@ -72,7 +74,9 @@ func CleanOldLogs(dir string, retainDays int) {
 		if err != nil {
 			continue
 		}
-		if t.Before(cutoff) {
+		fy, fm, fd := t.Date()
+		fileDate := time.Date(fy, fm, fd, 0, 0, 0, 0, time.Local)
+		if !fileDate.After(cutoff) {
 			_ = os.Remove(filepath.Join(dir, name))
 		}
 	}
