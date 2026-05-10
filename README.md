@@ -1,21 +1,22 @@
 # cclmonitor
 
-> Policy-based hook for Claude Code — monitor, notify, and block tool calls in real time.
+> Policy-based hook for Claude Code — audit and block tool calls in real time.
 
 [![Go](https://img.shields.io/badge/go-1.21+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)](https://www.apple.com/macos/)
 
-`cclmonitor` is a `PreToolUse` hook binary for [Claude Code](https://claude.ai/code). It intercepts every tool call — `Bash`, `Edit`, `Write`, `Read` — and evaluates it against your YAML policy. Dangerous commands get blocked before they run; everything else is logged with macOS notifications.
+`cclmonitor` is a hook binary for [Claude Code](https://claude.ai/code). It intercepts every tool call — `Bash`, `Edit`, `Write`, `Read` — and evaluates it against your YAML policy. Dangerous commands get blocked before they run; everything else is recorded in a JSONL audit log.
 
 ```
-Claude Code  →  PreToolUse hook  →  cclmonitor
-                                        │
-                              ┌─────────┴──────────┐
-                           deny?                allow/unknown?
-                              │                      │
-                    notify + exit 2            notify + exit 0
-                    (tool blocked)             (tool proceeds)
+Claude Code  →  PreToolUse hook (cclmonitor)
+                    deny?  → log "denied" + exit 2  (tool blocked)
+                    else   → exit 0
+
+             →  tool executes
+
+             →  PostToolUse hook (cclmonitor post)
+                    allow?   → log "executed"
+                    unknown? → log "unknown"
 ```
 
 ---
@@ -23,13 +24,11 @@ Claude Code  →  PreToolUse hook  →  cclmonitor
 ## Features
 
 - **Block by policy** — regex or glob rules per tool type; `deny` wins over `allow`
-- **macOS notifications** — instant alert via `osascript` when a rule fires
-- **JSONL audit log** — date-rotated log files under `~/.claude/`
-- **Dedup suppression** — SQLite-backed deduplication to silence repeated events
+- **Three-verdict audit log** — `executed` / `denied` / `unknown`, date-rotated JSONL files
+- **Accurate execution record** — PostToolUse hook confirms the tool actually ran
 - **Project overrides** — per-repo `.claude/cclmonitor.yaml` merges with global config
 - **Dry-run mode** — `cclmonitor test` evaluates a value without blocking anything
 - **Live log viewer** — `cclmonitor-tail` streams color-coded events to your terminal
-- **Zero CGO** — pure Go SQLite (`modernc.org/sqlite`), no extra toolchain needed
 
 ---
 
@@ -37,7 +36,7 @@ Claude Code  →  PreToolUse hook  →  cclmonitor
 
 ### Build from source
 
-**Prerequisites:** Go 1.21+, macOS, Claude Code
+**Prerequisites:** Go 1.21+, Claude Code
 
 ```sh
 git clone https://github.com/ryosandesu/cclmonitor.git
@@ -45,7 +44,7 @@ cd cclmonitor
 make install
 ```
 
-`make install` builds the binaries, copies them to `~/bin/`, and **auto-registers the hook** in `~/.claude/settings.json` (a backup is saved as `settings.json.bak`).
+`make install` builds the binaries, copies them to `~/bin/`, and **auto-registers both hooks** (PreToolUse and PostToolUse) in `~/.claude/settings.json` (a backup is saved as `settings.json.bak`).
 
 To use `cclmonitor-tail` and `cclmonitor test` from the terminal, add `~/bin/` to your PATH:
 
@@ -73,11 +72,8 @@ cp examples/cclmonitor.yaml ~/.claude/cclmonitor.yaml
 
 ```yaml
 # ~/.claude/cclmonitor.yaml
-mode: prod
-
-notify:
-  channels: [osascript, logfile]
-  dedup_window_sec: 60
+eventlog:
+  retain_days: 30
 
 rules:
   Bash:
@@ -114,12 +110,8 @@ cclmonitor test --tool Edit "/etc/passwd"
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `mode` | `prod` \| `dev` | `prod` | `dev` notifies on `allow` hits too |
-| `notify.channels` | list | `[]` | `osascript`, `logfile`, or both |
-| `notify.logdir` | path | `~/.claude/` | Directory for JSONL log files |
-| `notify.dbdir` | path | `~/.claude/` | Directory for the dedup SQLite DB |
-| `notify.dedup_window_sec` | int | `0` | Suppress duplicate events for N seconds (`0` = disabled) |
-| `notify.retain_days` | int | `30` | Delete log files older than N days |
+| `eventlog.logdir` | path | `~/.claude/` | Directory for JSONL log files |
+| `eventlog.retain_days` | int | `30` | Delete log files older than N days |
 
 ### Rule matching
 
@@ -159,7 +151,7 @@ Place a `.claude/cclmonitor.yaml` in any project root. It merges with your globa
 
 ### `cclmonitor test`
 
-Dry-run a value against your current policy. No notifications, no blocking.
+Dry-run a value against your current policy. No logging, no blocking.
 
 ```sh
 cclmonitor test [--tool TOOL] [--cwd DIR] <value>
@@ -179,18 +171,18 @@ cclmonitor-tail
 ```
 
 ```
-14:32:01 [allow  ] Bash: ls -la
-14:32:05 [deny   ] Bash: rm -rf /tmp
-14:32:10 [unknown] Write: /tmp/output.txt
+14:32:01 [executed] Bash: ls -la
+14:32:05 [denied  ] Bash: rm -rf /tmp
+14:32:10 [unknown ] Write: /tmp/output.txt
 ```
 
-<span style="color:green">■</span> green = allow &nbsp; <span style="color:red">■</span> red = deny &nbsp; <span style="color:#b5a000">■</span> yellow = unknown
+<span style="color:green">■</span> green = executed &nbsp; <span style="color:red">■</span> red = denied &nbsp; <span style="color:#b5a000">■</span> yellow = unknown
 
 ---
 
 ## Audit Log
 
-When `logfile` is enabled, events are appended to date-rotated files:
+Events are appended to date-rotated JSONL files:
 
 ```
 ~/.claude/
@@ -201,14 +193,22 @@ When `logfile` is enabled, events are appended to date-rotated files:
 Each line is a JSON object:
 
 ```json
-{"time":"2024-01-15T14:32:05Z","session_id":"abc123","tool_name":"Bash","value":"rm -rf /tmp","verdict":"deny"}
+{"time":"2024-01-15T14:32:05Z","session_id":"abc123","tool_name":"Bash","value":"rm -rf /tmp","verdict":"denied"}
 ```
+
+### Verdicts
+
+| Verdict | When | Hook |
+|---------|------|------|
+| `executed` | allow rule matched, tool ran | PostToolUse |
+| `denied` | deny rule matched, tool blocked | PreToolUse |
+| `unknown` | no rule matched, tool ran | PostToolUse |
 
 ---
 
 ## How the hook works
 
-`make install` writes the following entry into `~/.claude/settings.json`:
+`make install` writes the following into `~/.claude/settings.json`:
 
 ```json
 {
@@ -218,14 +218,19 @@ Each line is a JSON object:
         "matcher": "",
         "hooks": [{ "type": "command", "command": "/Users/<you>/bin/cclmonitor" }]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "/Users/<you>/bin/cclmonitor post" }]
+      }
     ]
   }
 }
 ```
 
-The full path is written automatically so Claude Code can find the binary regardless of your shell's `PATH`.
-
-Claude Code invokes `cclmonitor` synchronously before every tool call, passing a JSON payload on stdin. Exit code `2` blocks the tool; exit code `0` allows it.
+- **PreToolUse** evaluates the tool call before execution. Exit code `2` blocks the tool and logs `"denied"`.
+- **PostToolUse** fires after the tool actually ran. Logs `"executed"` or `"unknown"`. If the user cancels before execution, PostToolUse does not fire — leaving no log entry.
 
 ---
 

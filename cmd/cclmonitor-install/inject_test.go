@@ -70,6 +70,35 @@ func TestInjectHook_PreservesExistingFields(t *testing.T) {
 	}
 }
 
+func TestInjectHook_AddsPostToolUseHook(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+
+	if err := injectHook(path); err != nil {
+		t.Fatal(err)
+	}
+
+	data, _ := os.ReadFile(path)
+	var raw map[string]interface{}
+	json.Unmarshal(data, &raw)
+
+	hooks, _ := raw["hooks"].(map[string]interface{})
+	postToolUse, _ := hooks["PostToolUse"].([]interface{})
+	if len(postToolUse) == 0 {
+		t.Fatal("PostToolUse should have at least one entry")
+	}
+	entry, _ := postToolUse[0].(map[string]interface{})
+	hookList, _ := entry["hooks"].([]interface{})
+	if len(hookList) == 0 {
+		t.Fatal("PostToolUse hook entry should have at least one hook")
+	}
+	h, _ := hookList[0].(map[string]interface{})
+	cmd, _ := h["command"].(string)
+	if !strings.HasSuffix(cmd, "cclmonitor post") {
+		t.Errorf("command = %v, want path ending with 'cclmonitor post'", cmd)
+	}
+}
+
 func TestInjectHook_AddsPreToolUseHook(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")

@@ -9,11 +9,8 @@ import (
 func TestLoadFile(t *testing.T) {
 	dir := t.TempDir()
 	yamlContent := `
-mode: prod
-notify:
-  channels: [osascript, logfile]
+eventlog:
   logdir: ~/.claude/
-  dedup_window_sec: 60
   retain_days: 30
 rules:
   Bash:
@@ -34,17 +31,8 @@ rules:
 	if err != nil {
 		t.Fatalf("LoadFile error: %v", err)
 	}
-	if cfg.Mode != "prod" {
-		t.Errorf("Mode = %q, want %q", cfg.Mode, "prod")
-	}
-	if len(cfg.Notify.Channels) != 2 {
-		t.Errorf("Channels len = %d, want 2", len(cfg.Notify.Channels))
-	}
-	if cfg.Notify.DedupWindowSec != 60 {
-		t.Errorf("DedupWindowSec = %d, want 60", cfg.Notify.DedupWindowSec)
-	}
-	if cfg.Notify.RetainDays != 30 {
-		t.Errorf("RetainDays = %d, want 30", cfg.Notify.RetainDays)
+	if cfg.EventLog.RetainDays != 30 {
+		t.Errorf("RetainDays = %d, want 30", cfg.EventLog.RetainDays)
 	}
 	bashRules, ok := cfg.Rules["Bash"]
 	if !ok {
@@ -102,11 +90,6 @@ func TestExpandCwd_PreservesNonCwdPatterns(t *testing.T) {
 
 func TestMerge(t *testing.T) {
 	global := &Config{
-		Mode: "prod",
-		Notify: NotifyConfig{
-			Channels:       []string{"osascript"},
-			DedupWindowSec: 60,
-		},
 		Rules: map[string]ToolRules{
 			"Bash": {
 				Allow: []Rule{{Regex: `^ls\b`}},
@@ -123,9 +106,6 @@ func TestMerge(t *testing.T) {
 
 	merged := Merge(global, project)
 
-	if merged.Mode != "prod" {
-		t.Errorf("Mode = %q, want %q", merged.Mode, "prod")
-	}
 	if _, ok := merged.Rules["Bash"]; !ok {
 		t.Error("global Bash rules should be present")
 	}
@@ -136,7 +116,6 @@ func TestMerge(t *testing.T) {
 
 func TestMerge_ProjectAddsToGlobal(t *testing.T) {
 	global := &Config{
-		Mode: "prod",
 		Rules: map[string]ToolRules{
 			"Bash": {
 				Allow: []Rule{{Regex: `^ls\b`}},
@@ -144,7 +123,6 @@ func TestMerge_ProjectAddsToGlobal(t *testing.T) {
 		},
 	}
 	project := &Config{
-		Mode: "dev",
 		Rules: map[string]ToolRules{
 			"Bash": {
 				Allow: []Rule{{Regex: `^(go|make)\b`}},
@@ -154,23 +132,20 @@ func TestMerge_ProjectAddsToGlobal(t *testing.T) {
 
 	merged := Merge(global, project)
 
-	if merged.Mode != "dev" {
-		t.Errorf("Mode = %q, want project's %q", merged.Mode, "dev")
-	}
 	if len(merged.Rules["Bash"].Allow) != 2 {
 		t.Errorf("allow len = %d, want 2 (global + project)", len(merged.Rules["Bash"].Allow))
 	}
 }
 
 func TestMerge_NilProject(t *testing.T) {
-	global := &Config{Mode: "prod"}
+	global := &Config{}
 	merged := Merge(global, nil)
-	if merged.Mode != "prod" {
-		t.Errorf("Mode = %q", merged.Mode)
+	if merged == nil {
+		t.Error("merged should not be nil")
 	}
 }
 
-// グローバルと プロジェクトの deny は両方が適用される
+// グローバルとプロジェクトの deny は両方が適用される
 func TestMerge_DenyIsAdditive(t *testing.T) {
 	global := &Config{
 		Rules: map[string]ToolRules{

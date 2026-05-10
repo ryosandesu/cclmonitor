@@ -29,55 +29,6 @@ func bashPayload(cmd, cwd, session string) string {
 	return string(b)
 }
 
-func TestRun_DenyReturns2(t *testing.T) {
-	dir := t.TempDir()
-	cfgPath := writeCfg(t, dir, `
-rules:
-  Bash:
-    deny:
-      - regex: '\brm\s+-rf'
-`)
-	code := run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
-	if code != 2 {
-		t.Errorf("exit code = %d, want 2", code)
-	}
-}
-
-func TestRun_AllowReturns0(t *testing.T) {
-	dir := t.TempDir()
-	cfgPath := writeCfg(t, dir, `
-rules:
-  Bash:
-    allow:
-      - regex: '^ls\b'
-`)
-	code := run(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
-	if code != 0 {
-		t.Errorf("exit code = %d, want 0", code)
-	}
-}
-
-func TestRun_UnknownReturns0(t *testing.T) {
-	dir := t.TempDir()
-	cfgPath := writeCfg(t, dir, `
-rules:
-  Bash:
-    allow:
-      - regex: '^ls\b'
-`)
-	code := run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
-	if code != 0 {
-		t.Errorf("exit code = %d, want 0", code)
-	}
-}
-
-func TestRun_NoConfigReturns0(t *testing.T) {
-	code := run(strings.NewReader(bashPayload("anything", "/tmp", "s1")), "/nonexistent/cclmonitor.yaml")
-	if code != 0 {
-		t.Errorf("exit code = %d, want 0", code)
-	}
-}
-
 func readTodayLog(t *testing.T, dir string) []byte {
 	t.Helper()
 	entries, err := os.ReadDir(dir)
@@ -97,44 +48,91 @@ func readTodayLog(t *testing.T, dir string) []byte {
 	return nil
 }
 
-func TestRun_DevModeWritesLogOnAllow(t *testing.T) {
+// --- PreToolUse (run) ---
+
+func TestRun_DenyReturns2(t *testing.T) {
 	dir := t.TempDir()
-	logDir := filepath.Join(dir, "logs")
 	cfgPath := writeCfg(t, dir, `
-mode: dev
-notify:
-  channels: [logfile]
-  logdir: `+logDir+`
 rules:
   Bash:
-    allow:
-      - regex: '^ls\b'
+    deny:
+      - regex: '\brm\s+-rf'
 `)
-	run(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
-
-	data := readTodayLog(t, logDir)
-	if !strings.Contains(string(data), "allow") {
-		t.Errorf("log should contain 'allow', got: %s", data)
+	code := run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
+	if code != 2 {
+		t.Errorf("exit code = %d, want 2", code)
 	}
 }
 
-func TestRun_UnknownWritesLog(t *testing.T) {
+func TestRun_DenyWritesDeniedLog(t *testing.T) {
 	dir := t.TempDir()
 	logDir := filepath.Join(dir, "logs")
 	cfgPath := writeCfg(t, dir, `
-notify:
-  channels: [logfile]
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    deny:
+      - regex: '\brm\s+-rf'
+`)
+	run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
+
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "denied") {
+		t.Errorf("log should contain 'denied', got: %s", data)
+	}
+}
+
+func TestRun_AllowReturns0WithNoLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
   logdir: `+logDir+`
 rules:
   Bash:
     allow:
       - regex: '^ls\b'
 `)
-	run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
+	code := run(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
+	if code != 0 {
+		t.Errorf("exit code = %d, want 0", code)
+	}
+	if _, err := os.ReadDir(logDir); err == nil {
+		entries, _ := os.ReadDir(logDir)
+		if len(entries) > 0 {
+			t.Error("PreToolUse should not write log for allow verdict")
+		}
+	}
+}
 
-	data := readTodayLog(t, logDir)
-	if !strings.Contains(string(data), "unknown") {
-		t.Errorf("log should contain 'unknown', got: %s", data)
+func TestRun_UnknownReturns0WithNoLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	code := run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
+	if code != 0 {
+		t.Errorf("exit code = %d, want 0", code)
+	}
+	if _, err := os.ReadDir(logDir); err == nil {
+		entries, _ := os.ReadDir(logDir)
+		if len(entries) > 0 {
+			t.Error("PreToolUse should not write log for unknown verdict")
+		}
+	}
+}
+
+func TestRun_NoConfigReturns0(t *testing.T) {
+	code := run(strings.NewReader(bashPayload("anything", "/tmp", "s1")), "/nonexistent/cclmonitor.yaml")
+	if code != 0 {
+		t.Errorf("exit code = %d, want 0", code)
 	}
 }
 
@@ -145,32 +143,65 @@ func TestRun_MalformedInputReturns0(t *testing.T) {
 	}
 }
 
-func TestRun_DedupSuppressesSecondNotification(t *testing.T) {
+// --- PostToolUse (runPost) ---
+
+func TestRunPost_AllowWritesExecutedLog(t *testing.T) {
 	dir := t.TempDir()
 	logDir := filepath.Join(dir, "logs")
-	dbDir := filepath.Join(dir, "db")
 	cfgPath := writeCfg(t, dir, `
-notify:
-  channels: [logfile]
+eventlog:
   logdir: `+logDir+`
-  dbdir: `+dbDir+`
-  dedup_window_sec: 60
 rules:
   Bash:
     allow:
       - regex: '^ls\b'
 `)
-	// 1回目：ログに書かれる
-	run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
-	data1 := readTodayLog(t, logDir)
-	lines1 := strings.Count(string(data1), "\n")
+	runPost(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
 
-	// 2回目：dedup により抑制されるのでログ行数が増えない
-	run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
-	data2 := readTodayLog(t, logDir)
-	lines2 := strings.Count(string(data2), "\n")
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "executed") {
+		t.Errorf("log should contain 'executed', got: %s", data)
+	}
+}
 
-	if lines2 > lines1 {
-		t.Errorf("second identical event should be deduplicated, lines: %d -> %d", lines1, lines2)
+func TestRunPost_UnknownWritesUnknownLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	runPost(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
+
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "unknown") {
+		t.Errorf("log should contain 'unknown', got: %s", data)
+	}
+}
+
+func TestRunPost_DenyIsIgnored(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    deny:
+      - regex: '\brm\s+-rf'
+`)
+	code := runPost(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
+	if code != 0 {
+		t.Errorf("exit code = %d, want 0", code)
+	}
+	if _, err := os.ReadDir(logDir); err == nil {
+		entries, _ := os.ReadDir(logDir)
+		if len(entries) > 0 {
+			t.Error("PostToolUse should not write log for deny verdict")
+		}
 	}
 }

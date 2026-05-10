@@ -1,10 +1,9 @@
-package notify
+package eventlog
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -20,22 +19,12 @@ type Event struct {
 	Verdict   string    `json:"verdict"`
 }
 
-// Notify dispatches an event to each configured channel.
-func Notify(cfg config.NotifyConfig, event Event) error {
-	for _, ch := range cfg.Channels {
-		switch ch {
-		case "logfile":
-			dir := resolveDir(cfg.LogDir)
-			if err := AppendLog(dir, event); err != nil {
-				return err
-			}
-			go CleanOldLogs(dir, cfg.RetainDays)
-		case "osascript":
-			if err := sendOsascript(event); err != nil {
-				return err
-			}
-		}
+func Write(cfg config.EventLogConfig, event Event) error {
+	dir := resolveDir(cfg.LogDir)
+	if err := AppendLog(dir, event); err != nil {
+		return err
 	}
+	go CleanOldLogs(dir, cfg.RetainDays)
 	return nil
 }
 
@@ -109,17 +98,4 @@ func resolveDir(dir string) string {
 		return filepath.Join(home, dir[2:])
 	}
 	return dir
-}
-
-func osascriptMessage(event Event) string {
-	return fmt.Sprintf("[%s] %s: %s", event.Verdict, event.ToolName, event.Value)
-}
-
-func sendOsascript(event Event) error {
-	msg := osascriptMessage(event)
-	script := fmt.Sprintf(
-		`display notification %q with title "cclmonitor"`,
-		msg,
-	)
-	return exec.Command("osascript", "-e", script).Start()
 }

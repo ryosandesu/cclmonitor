@@ -1,4 +1,4 @@
-package notify
+package eventlog
 
 import (
 	"bufio"
@@ -141,17 +141,5 @@ func TestCleanOldLogs_DefaultsTo30Days(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(dir, old)); err == nil {
 		t.Error("31-day-old file should be deleted with default 30-day retention")
-	}
-}
-
-func TestOsascriptMessage(t *testing.T) {
-	event := Event{
-		ToolName: "Bash",
-		Value:    "rm -rf /",
-		Verdict:  "deny",
-	}
-	msg := osascriptMessage(event)
-	if msg == "" {
-		t.Error("message should not be empty")
 	}
 }

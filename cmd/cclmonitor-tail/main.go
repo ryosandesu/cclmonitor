@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ryosandesu/cclmonitor/internal/config"
-	"github.com/ryosandesu/cclmonitor/internal/notify"
+	"github.com/ryosandesu/cclmonitor/internal/eventlog"
 )
 
 const (
@@ -35,7 +35,7 @@ func verdictColor(verdict string) string {
 	}
 }
 
-func FormatLine(e notify.Event) string {
+func FormatLine(e eventlog.Event) string {
 	color := verdictColor(e.Verdict)
 	ts := e.Time.UTC().Format("15:04:05")
 	verdict := fmt.Sprintf("%-7s", e.Verdict)
@@ -82,7 +82,7 @@ func tail(logDir string, out io.Writer) error {
 }
 
 func printLine(raw string, out io.Writer) {
-	var e notify.Event
+	var e eventlog.Event
 	if err := json.Unmarshal([]byte(raw), &e); err != nil {
 		fmt.Fprintln(out, raw)
 		return
@@ -101,7 +101,7 @@ func globalCfgPath() string {
 func main() {
 	logDir := ""
 	if cfg, err := config.LoadFile(globalCfgPath()); err == nil {
-		logDir = cfg.Notify.LogDir
+		logDir = cfg.EventLog.LogDir
 	}
 	if err := tail(logDir, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)

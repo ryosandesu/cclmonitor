@@ -5,26 +5,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ryosandesu/cclmonitor/internal/notify"
+	"github.com/ryosandesu/cclmonitor/internal/eventlog"
 )
 
 func TestFormatLine(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 14, 32, 1, 0, time.UTC)
 
 	tests := []struct {
-		event  notify.Event
+		event  eventlog.Event
 		checks []string
 	}{
 		{
-			event:  notify.Event{Time: ts, ToolName: "Bash", Value: "ls -la", Verdict: "allow"},
+			event:  eventlog.Event{Time: ts, ToolName: "Bash", Value: "ls -la", Verdict: "allow"},
 			checks: []string{"14:32:01", "allow", "Bash", "ls -la", colorGreen},
 		},
 		{
-			event:  notify.Event{Time: ts, ToolName: "Edit", Value: "/path/to/file", Verdict: "deny"},
+			event:  eventlog.Event{Time: ts, ToolName: "Edit", Value: "/path/to/file", Verdict: "deny"},
 			checks: []string{"14:32:01", "deny", "Edit", "/path/to/file", colorRed},
 		},
 		{
-			event:  notify.Event{Time: ts, ToolName: "Write", Value: "/tmp/out", Verdict: "unknown"},
+			event:  eventlog.Event{Time: ts, ToolName: "Write", Value: "/tmp/out", Verdict: "unknown"},
 			checks: []string{"14:32:01", "unknown", "Write", "/tmp/out", colorYellow},
 		},
 	}

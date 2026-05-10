@@ -50,9 +50,14 @@ func alreadyInjected(raw map[string]interface{}) bool {
 	if hooks == nil {
 		return false
 	}
-	preToolUse, _ := hooks["PreToolUse"].([]interface{})
 	target := cclmonitorPath()
-	for _, entry := range preToolUse {
+	return hasCommand(hooks["PreToolUse"], target) &&
+		hasCommand(hooks["PostToolUse"], target+" post")
+}
+
+func hasCommand(hookSection interface{}, cmd string) bool {
+	entries, _ := hookSection.([]interface{})
+	for _, entry := range entries {
 		entryMap, _ := entry.(map[string]interface{})
 		if entryMap == nil {
 			continue
@@ -60,8 +65,7 @@ func alreadyInjected(raw map[string]interface{}) bool {
 		hookList, _ := entryMap["hooks"].([]interface{})
 		for _, h := range hookList {
 			hMap, _ := h.(map[string]interface{})
-			cmd, _ := hMap["command"].(string)
-			if cmd == target || cmd == "cclmonitor" {
+			if hMap["command"] == cmd {
 				return true
 			}
 		}
@@ -76,14 +80,31 @@ func addHookEntry(raw map[string]interface{}) {
 		raw["hooks"] = hooks
 	}
 
-	preToolUse, _ := hooks["PreToolUse"].([]interface{})
-	hooks["PreToolUse"] = append(preToolUse, map[string]interface{}{
-		"matcher": "",
-		"hooks": []interface{}{
-			map[string]interface{}{
-				"type":    "command",
-				"command": cclmonitorPath(),
+	target := cclmonitorPath()
+
+	if !hasCommand(hooks["PreToolUse"], target) {
+		preToolUse, _ := hooks["PreToolUse"].([]interface{})
+		hooks["PreToolUse"] = append(preToolUse, map[string]interface{}{
+			"matcher": "",
+			"hooks": []interface{}{
+				map[string]interface{}{
+					"type":    "command",
+					"command": target,
+				},
 			},
-		},
-	})
+		})
+	}
+
+	if !hasCommand(hooks["PostToolUse"], target+" post") {
+		postToolUse, _ := hooks["PostToolUse"].([]interface{})
+		hooks["PostToolUse"] = append(postToolUse, map[string]interface{}{
+			"matcher": "",
+			"hooks": []interface{}{
+				map[string]interface{}{
+					"type":    "command",
+					"command": target + " post",
+				},
+			},
+		})
+	}
 }
