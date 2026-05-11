@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.5.0] - 2026-05-11
+
+### Added
+- Windows support: `cclmonitor-install` now appends `.exe` to hook commands on Windows so `settings.json` references the correct binary
+- README installation section split into macOS/Linux and Windows subsections, with PowerShell instructions for Windows users
+
+### Changed
+- `cmd/cclmonitor`: project config path is now built with `filepath.Join` instead of string concatenation (transparent on POSIX, correct on Windows)
+- README prerequisite updated to Go 1.26+ to match `go.mod`
+
 ## [v0.4.0] - 2026-05-11
 
 ### Added

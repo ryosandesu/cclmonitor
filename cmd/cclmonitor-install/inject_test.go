@@ -162,6 +162,22 @@ func TestInjectHook_Idempotent(t *testing.T) {
 	}
 }
 
+func TestBinaryName_AppendsExeOnWindows(t *testing.T) {
+	got := binaryName("cclmonitor", "windows")
+	if got != "cclmonitor.exe" {
+		t.Errorf("binaryName(\"cclmonitor\", \"windows\") = %q, want %q", got, "cclmonitor.exe")
+	}
+}
+
+func TestBinaryName_NoSuffixOnUnix(t *testing.T) {
+	for _, goos := range []string{"darwin", "linux", "freebsd"} {
+		got := binaryName("cclmonitor", goos)
+		if got != "cclmonitor" {
+			t.Errorf("binaryName(\"cclmonitor\", %q) = %q, want %q", goos, got, "cclmonitor")
+		}
+	}
+}
+
 func TestInjectHook_AppendsToExistingPreToolUse(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")

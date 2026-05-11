@@ -36,9 +36,9 @@ Claude Code  →  PreToolUse hook (cclmonitor)
 
 ## Installation
 
-### Build from source
+**Prerequisites:** Go 1.26+, Claude Code
 
-**Prerequisites:** Go 1.21+, Claude Code
+### macOS / Linux
 
 ```sh
 git clone https://github.com/ryosandesu/cclmonitor.git
@@ -52,6 +52,34 @@ To use `cclmonitor-tail` and `cclmonitor test` from the terminal, add `~/bin/` t
 
 ```sh
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
+
+### Windows
+
+`make` is not available by default on Windows, so build manually with PowerShell:
+
+```powershell
+git clone https://github.com/ryosandesu/cclmonitor.git
+cd cclmonitor
+
+# Build all binaries
+go build -o bin\cclmonitor.exe .\cmd\cclmonitor
+go build -o bin\cclmonitor-install.exe .\cmd\cclmonitor-install
+go build -o bin\cclmonitor-tail.exe .\cmd\cclmonitor-tail
+go build -o bin\cclmonitor-ui.exe .\cmd\cclmonitor-ui
+
+# Install to %USERPROFILE%\bin and register hooks
+New-Item -ItemType Directory -Force -Path "$HOME\bin" | Out-Null
+Move-Item -Force bin\*.exe "$HOME\bin\"
+& "$HOME\bin\cclmonitor-install.exe"
+```
+
+This registers the hooks in `%USERPROFILE%\.claude\settings.json` (a backup is saved as `settings.json.bak`).
+
+To use `cclmonitor-tail` and `cclmonitor test` from any terminal, add `%USERPROFILE%\bin` to your PATH:
+
+```powershell
+[Environment]::SetEnvironmentVariable("Path", "$env:Path;$HOME\bin", "User")
 ```
 
 ### Verify

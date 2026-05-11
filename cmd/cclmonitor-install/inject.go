@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 func injectHook(path string) error {
@@ -38,11 +39,19 @@ func injectHook(path string) error {
 }
 
 func cclmonitorPath() string {
+	name := binaryName("cclmonitor", runtime.GOOS)
 	exe, err := os.Executable()
 	if err != nil {
-		return "cclmonitor"
+		return name
 	}
-	return filepath.Join(filepath.Dir(exe), "cclmonitor")
+	return filepath.Join(filepath.Dir(exe), name)
+}
+
+func binaryName(name, goos string) string {
+	if goos == "windows" {
+		return name + ".exe"
+	}
+	return name
 }
 
 func alreadyInjected(raw map[string]interface{}) bool {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"path/filepath"
 	"time"
 
 	"github.com/ryosandesu/cclmonitor/internal/config"
@@ -110,7 +111,7 @@ func loadMergedConfig(globalPath, cwd string) *config.Config {
 		global = &config.Config{}
 	}
 
-	projectPath := cwd + "/.claude/cclmonitor.yaml"
+	projectPath := filepath.Join(cwd, ".claude", "cclmonitor.yaml")
 	project, err := config.LoadFile(projectPath)
 	if err != nil {
 		return global
