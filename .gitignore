@@ -8,6 +8,11 @@ bin/
 *.db
 *.log
 
+# Secrets                                                                                                              
+.env*                                                                                                                
+*.pem
+*secrets*
+
 # macOS
 .DS_Store
 
