@@ -7,7 +7,7 @@ import (
 
 func renderEvents(m model) string {
 	var sb strings.Builder
-	sb.WriteString(styleHeader.Render(fmt.Sprintf("%-10s %-12s %-8s %s", "Time", "Verdict", "Tool", "Value")) + "\n")
+	sb.WriteString(styleHeader.Render(fmt.Sprintf("%-21s %-12s %-8s %s", "Time", "Verdict", "Tool", "Value")) + "\n")
 	sb.WriteString(styleMuted.Render(strings.Repeat("─", 60)) + "\n")
 
 	evts := m.recentEvts
@@ -20,12 +20,12 @@ func renderEvents(m model) string {
 
 	for i := start; i >= 0 && shown < maxRows; i-- {
 		e := evts[i]
-		ts := e.Time.Local().Format("15:04:05")
+		ts := e.Time.Local().Format("2006-01-02 15:04:05")
 		val := e.Value
 		if len(val) > 40 {
 			val = val[:37] + "..."
 		}
-		line := fmt.Sprintf("%-10s %-12s %-8s %s",
+		line := fmt.Sprintf("%-21s %-12s %-8s %s",
 			ts,
 			verdictStyle(e.Verdict).Render(e.Verdict),
 			e.ToolName,

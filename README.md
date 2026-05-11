@@ -209,6 +209,65 @@ cclmonitor-ui [--logdir ~/.claude/] [--snapshot] [--grace 60s]
 | `s` | Pause / resume live updates |
 | `q` | Quit |
 
+#### Scores (Overview tab)
+
+The Overview tab shows two scores derived from the verdict of each tool call.
+
+**Verdicts** — every event lands in exactly one bucket:
+
+| Verdict | Logged by | Meaning |
+|---------|-----------|---------|
+| `executed` | PostToolUse | allow rule matched; tool ran to completion |
+| `denied` | PreToolUse | deny rule matched; tool was blocked |
+| `cancelled` | — | `pending` with no matching PostToolUse; user cancelled at the prompt |
+| `unknown` | PostToolUse | no rule matched; tool ran to completion |
+| `interrupted` | PostToolUse | tool started but stopped mid-execution |
+
+---
+
+**Compliance Score** — *how well Claude operates within your allow rules*
+
+```
+executed ÷ (executed + denied + cancelled)
+```
+
+Denominator = events where your policy applied **and** the outcome is final.  
+`unknown` is excluded (no rule was written for those calls, so they are outside the policy scope).  
+`pending` is excluded (outcome not yet final).
+
+| Score | Meaning |
+|-------|---------|
+| High | Claude is mostly attempting allowed operations |
+| Low | Claude is frequently attempting operations your rules block |
+
+---
+
+**Coverage Score** — *how completely your rules cover real tool usage*
+
+```
+(executed + denied) ÷ (executed + denied + unknown)
+```
+
+Denominator = all calls confirmed as completed by PostToolUse.  
+`cancelled` is excluded (tool never ran).  
+A high `unknown` count means your rules have gaps — operations are running without any policy applied.
+
+| Score | Meaning |
+|-------|---------|
+| High | Your rules cover almost all tool calls |
+| Low | Many tool calls match no rule (consider adding more allow/deny entries) |
+
+---
+
+**Reading both scores together**
+
+| Compliance | Coverage | Interpretation |
+|------------|----------|----------------|
+| High | High | Rules are thorough and Claude operates within policy ✅ |
+| High | Low | Claude is well-behaved but rules have gaps (many `unknown`) |
+| Low | High | Rules are thorough but Claude frequently attempts blocked operations |
+| Low | Low | Rules are incomplete and Claude is frequently out of policy ⚠️ |
+
 ### `cclmonitor-tail`
 
 Stream today's audit log to your terminal with color-coded verdicts.

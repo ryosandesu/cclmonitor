@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ryosandesu/cclmonitor/internal/config"
 )
 
 var version = "dev"
@@ -31,17 +32,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	if logDir == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "cannot determine home directory:", err)
-			os.Exit(1)
-		}
-		logDir = filepath.Join(home, ".claude")
-	} else if strings.HasPrefix(logDir, "~/") {
-		home, _ := os.UserHomeDir()
-		logDir = filepath.Join(home, logDir[2:])
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cannot determine home directory:", err)
+		os.Exit(1)
 	}
+	cfgPath := filepath.Join(home, ".claude", "cclmonitor.yaml")
+	logDir = resolveLogDir(logDir, cfgPath, home)
 
 	m := newModel(logDir, grace, snapshot)
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -49,4 +46,25 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
+}
+
+// resolveLogDir は logdir の決定順序を実装する。
+// --logdir フラグ > 設定ファイルの eventlog.logdir > デフォルト ~/.claude/
+func resolveLogDir(flag, cfgPath, home string) string {
+	expandTilde := func(p string) string {
+		if strings.HasPrefix(p, "~/") {
+			return filepath.Join(home, p[2:])
+		}
+		return p
+	}
+
+	if flag != "" {
+		return expandTilde(flag)
+	}
+
+	if cfg, err := config.LoadFile(cfgPath); err == nil && cfg.EventLog.LogDir != "" {
+		return expandTilde(cfg.EventLog.LogDir)
+	}
+
+	return filepath.Join(home, ".claude")
 }

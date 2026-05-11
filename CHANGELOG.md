@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.5.1] - 2026-05-11
+
+### Fixed
+- `cclmonitor-ui` now reads `eventlog.logdir` from `~/.claude/cclmonitor.yaml` instead of always defaulting to `~/.claude/`, matching the behaviour of all other cclmonitor commands
+- Events tab timestamp changed from `HH:MM:SS` to `YYYY-MM-DD HH:MM:SS` so dates are visible when viewing multi-day history
+
+### Changed
+- README: added Compliance / Coverage score explanation with verdict table and interpretation matrix
+
 ## [v0.5.0] - 2026-05-11
 
 ### Added
