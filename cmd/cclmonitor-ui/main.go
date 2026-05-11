@@ -23,7 +23,7 @@ func main() {
 	)
 	flag.StringVar(&logDir, "logdir", "", "JSONL log directory (default: ~/.claude/)")
 	flag.BoolVar(&snapshot, "snapshot", false, "one-shot aggregation, no live updates")
-	flag.DurationVar(&grace, "grace", 60*time.Second, "grace period for in-flight pending events")
+	flag.DurationVar(&grace, "grace", 0, "grace period for in-flight pending events (default: config file or 60s)")
 	flag.BoolVar(&showVer, "version", false, "print version and exit")
 	flag.Parse()
 
@@ -39,6 +39,7 @@ func main() {
 	}
 	cfgPath := filepath.Join(home, ".claude", "cclmonitor.yaml")
 	logDir = resolveLogDir(logDir, cfgPath, home)
+	grace = resolveGrace(grace, cfgPath)
 
 	m := newModel(logDir, grace, snapshot)
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -46,6 +47,18 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
+}
+
+// resolveGrace は grace period の決定順序を実装する。
+// --grace フラグ（> 0）> 設定ファイルの grace_sec > デフォルト 60 秒
+func resolveGrace(flag time.Duration, cfgPath string) time.Duration {
+	if flag > 0 {
+		return flag
+	}
+	if cfg, err := config.LoadFile(cfgPath); err == nil && cfg.EventLog.GraceSec > 0 {
+		return time.Duration(cfg.EventLog.GraceSec) * time.Second
+	}
+	return 60 * time.Second
 }
 
 // resolveLogDir は logdir の決定順序を実装する。

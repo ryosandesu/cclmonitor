@@ -15,6 +15,7 @@ type Config struct {
 type EventLogConfig struct {
 	LogDir     string `yaml:"logdir"`
 	RetainDays int    `yaml:"retain_days"`
+	GraceSec   int    `yaml:"grace_sec"`
 }
 
 type ToolRules struct {

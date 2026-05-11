@@ -142,6 +142,7 @@ cclmonitor test --tool Edit "/etc/passwd"
 |-----|------|---------|-------------|
 | `eventlog.logdir` | path | `~/.claude/` | Directory for JSONL log files |
 | `eventlog.retain_days` | int | `30` | Delete log files older than N days |
+| `eventlog.grace_sec` | int | `60` | Seconds to wait before treating an unmatched `pending` as `cancelled` in `cclmonitor-ui` |
 
 ### Rule matching
 

@@ -48,7 +48,7 @@ func renderTimeline(m model) string {
 		bar := lipgloss.NewStyle().Foreground(col).Render(strings.Repeat("█", filled)) +
 			styleMuted.Render(strings.Repeat("░", barWidth-filled))
 
-		sb.WriteString(fmt.Sprintf("  %s %s  %s  %.0f%%\n",
+		sb.WriteString(fmt.Sprintf("  %s %s  %s  %.1f%%\n",
 			styleMuted.Render(weekday),
 			styleHeader.Render(date),
 			bar,

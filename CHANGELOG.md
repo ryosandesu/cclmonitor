@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.6.0] - 2026-05-11
+
+### Added
+- `eventlog.grace_sec` config key — sets the seconds `cclmonitor-ui` waits before treating an unmatched `pending` as `cancelled` (default: 60). Eliminates the need to pass `--grace` on every launch.
+
+### Fixed
+- Compliance percentage format unified to `%.1f%%` across all views (Overview Per-Tool section, Tools tab, and Timeline were inconsistent)
+
 ## [v0.5.1] - 2026-05-11
 
 ### Fixed

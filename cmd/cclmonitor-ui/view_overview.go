@@ -86,7 +86,7 @@ func renderPerToolBars(m model) string {
 		bar := complianceBar(s.Compliance, 16)
 		pct := "N/A"
 		if s.Compliance >= 0 {
-			pct = fmt.Sprintf("%.0f%%", s.Compliance*100)
+			pct = fmt.Sprintf("%.1f%%", s.Compliance*100)
 		}
 		sb.WriteString(fmt.Sprintf("  %-6s %s %s\n", tool, bar, pct))
 	}

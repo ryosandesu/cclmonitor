@@ -46,6 +46,21 @@ rules:
 	}
 }
 
+func TestLoadFile_ParsesGraceSec(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "cclmonitor.yaml")
+	if err := os.WriteFile(path, []byte("eventlog:\n  grace_sec: 120\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadFile(path)
+	if err != nil {
+		t.Fatalf("LoadFile error: %v", err)
+	}
+	if cfg.EventLog.GraceSec != 120 {
+		t.Errorf("GraceSec = %d, want 120", cfg.EventLog.GraceSec)
+	}
+}
+
 func TestLoadFile_NotFound(t *testing.T) {
 	_, err := LoadFile("/nonexistent/path/cclmonitor.yaml")
 	if err == nil {

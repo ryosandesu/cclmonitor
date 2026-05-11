@@ -4,7 +4,40 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
+
+func TestResolveGrace_FlagTakesPriority(t *testing.T) {
+	home := t.TempDir()
+	cfgPath := filepath.Join(home, ".claude", "cclmonitor.yaml")
+	got := resolveGrace(30*time.Second, cfgPath)
+	if got != 30*time.Second {
+		t.Errorf("resolveGrace with flag = %v, want 30s", got)
+	}
+}
+
+func TestResolveGrace_UsesCfgGraceSec(t *testing.T) {
+	home := t.TempDir()
+	cfgDir := filepath.Join(home, ".claude")
+	if err := os.MkdirAll(cfgDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(cfgDir, "cclmonitor.yaml")
+	os.WriteFile(cfgPath, []byte("eventlog:\n  grace_sec: 120\n"), 0600)
+	got := resolveGrace(0, cfgPath)
+	if got != 120*time.Second {
+		t.Errorf("resolveGrace from config = %v, want 120s", got)
+	}
+}
+
+func TestResolveGrace_FallsBackToDefault(t *testing.T) {
+	home := t.TempDir()
+	cfgPath := filepath.Join(home, ".claude", "nonexistent.yaml")
+	got := resolveGrace(0, cfgPath)
+	if got != 60*time.Second {
+		t.Errorf("resolveGrace default = %v, want 60s", got)
+	}
+}
 
 func TestResolveLogDir_FlagTakesPriority(t *testing.T) {
 	home := t.TempDir()
