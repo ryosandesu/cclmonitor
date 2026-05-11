@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.3.1] - 2026-05-11
+
+### Added
+- `THIRD_PARTY_LICENSES` file listing license texts for bundled dependencies
+
 ## [v0.3.0] - 2026-05-11
 
 ### Added
