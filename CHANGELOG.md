@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.4.0] - 2026-05-11
+
+### Added
+- `cclmonitor-ui` — TUI dashboard with Overview, Tools, Timeline, and Events tabs
+- Compliance Score (`executed / (executed + denied + cancelled)`) — measures how well Claude follows allow rules
+- Coverage Score (`(executed + denied) / (executed + denied + unknown)`) — measures how complete the rule definitions are
+- Period filter: Today / 7d / 30d / All (`t` / `7` / `m` / `a` keys)
+- 30-day compliance trend chart (Timeline tab, always shown regardless of period filter)
+- Live event feed with 500ms incremental polling
+
 ## [v0.3.1] - 2026-05-11
 
 ### Added

@@ -30,6 +30,7 @@ Claude Code  →  PreToolUse hook (cclmonitor)
 - **Project overrides** — per-repo `.claude/cclmonitor.yaml` merges with global config
 - **Dry-run mode** — `cclmonitor test` evaluates a value without blocking anything
 - **Live log viewer** — `cclmonitor-tail` streams color-coded events to your terminal
+- **TUI dashboard** — `cclmonitor-ui` shows Compliance & Coverage scores, per-tool breakdown, 30-day heatmap, and live event feed
 
 ---
 
@@ -162,6 +163,23 @@ cclmonitor test "git push --force"
 cclmonitor test --tool Edit "~/.ssh/id_rsa"
 cclmonitor test --tool Bash --cwd ~/projects/myapp "npm install"
 ```
+
+### `cclmonitor-ui`
+
+Full-screen TUI dashboard. Shows harness compliance scores, per-tool breakdown, 30-day timeline, and a live event feed.
+
+```sh
+cclmonitor-ui [--logdir ~/.claude/] [--snapshot] [--grace 60s]
+```
+
+| Key | Action |
+|-----|--------|
+| `1`–`4` | Switch tabs (Overview / Tools / Timeline / Events) |
+| `t` / `7` / `m` / `a` | Period: today / 7d / 30d / all |
+| `j` / `k` | Scroll events |
+| `r` | Refresh |
+| `s` | Pause / resume live updates |
+| `q` | Quit |
 
 ### `cclmonitor-tail`
 
