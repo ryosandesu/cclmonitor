@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.7.0] - 2026-05-12
+
+### Added
+- `cclmonitor suggest` subcommand — scans cclmonitor event logs (or Claude Code transcripts as fallback) and proposes rule additions for `cclmonitor.yaml` via an interactive `[y/N/q]` prompt. Frequent `unknown` patterns become allow candidates; repeated `denied` patterns become deny candidates.
+- Built-in baseline defaults (secrets / shell-safety / git-safety deny rules) applied via the suggest defaults mode when log data is insufficient.
+- Structured YAML insertion: rules are added via `yaml.v3` Node API (not text append) with atomic write and per-session timestamped backup (`*.bak-YYYY-MM-DD-HHMMSS`).
+- `--dry-run`, `--days`, `--min-count`, `--insufficient-threshold`, `--target {global|project}` flags for the new subcommand.
+- PreToolUse deny now writes `{"reason": "..."}` to stdout in addition to exiting with code 2. Claude Code displays this as the block reason and instructs the model not to attempt workarounds.
+
+### Changed
+- `cclmonitor-ui` Overview: Recent Violations list is now sorted newest-first and timestamp includes date (`MM/DD HH:MM`)
+- `cclmonitor-ui` value truncation changed to tail-based for file-path tools (Edit/Write/Read) so the filename is always visible; Bash commands continue to truncate from the right
+
 ## [v0.6.0] - 2026-05-11
 
 ### Added

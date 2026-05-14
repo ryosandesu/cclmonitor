@@ -193,6 +193,33 @@ cclmonitor test --tool Edit "~/.ssh/id_rsa"
 cclmonitor test --tool Bash --cwd ~/projects/myapp "npm install"
 ```
 
+### `cclmonitor suggest`
+
+Analyze recent logs and propose new rules for `cclmonitor.yaml`. Each proposal is shown one at a time with `[y/N/q]` — `y` writes the rule, `n` skips, `q` exits.
+
+```sh
+cclmonitor suggest [--days 30] [--min-count 5] [--target global|project] [--dry-run]
+
+# Typical flow: from inside your project root
+cd ~/projects/myapp
+cclmonitor suggest --target project
+```
+
+**Sources, in order:**
+
+1. cclmonitor event log (`~/.claude/cclmonitor.YYYY-MM-DD.log` or your `eventlog.logdir`)
+2. Claude Code transcripts (`~/.claude/projects/<encoded-cwd>/*.jsonl`) — used when cclmonitor logs are empty
+3. **Built-in defaults** — applied when neither source has enough events (default threshold: 10). Adds secrets / shell-safety / git-safety deny rules with a single `[y/N]` prompt
+
+**Safety:**
+
+- Never suggests removing or relaxing existing `deny` rules
+- Skips suggestions already present in the target yaml
+- Backs up the target before the first write (`<path>.bak-YYYY-MM-DD-HHMMSS`)
+- Writes atomically (temp file + rename)
+
+**Tip:** run `suggest` from your project root so file-path suggestions get expressed as `<cwd>/...` globs.
+
 ### `cclmonitor-ui`
 
 Full-screen TUI dashboard. Shows harness compliance scores, per-tool breakdown, 30-day timeline, and a live event feed.
@@ -340,7 +367,7 @@ A `pending` entry with no matching `tool_use_id` in PostToolUse means the user c
 }
 ```
 
-- **PreToolUse** evaluates the tool call before execution. Exit code `2` blocks the tool and logs `"denied"`.
+- **PreToolUse** evaluates the tool call before execution. Exit code `2` blocks the tool and logs `"denied"`. When a call is denied, cclmonitor also writes `{"reason": "..."}` to stdout — Claude Code displays this as the block reason and instructs the model not to attempt workarounds.
 - **PostToolUse** fires after the tool actually ran. Logs `"executed"` or `"unknown"`. If the user cancels before execution, PostToolUse does not fire — leaving no log entry.
 
 ---

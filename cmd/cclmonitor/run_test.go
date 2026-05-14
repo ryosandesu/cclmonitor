@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,9 +76,36 @@ rules:
     deny:
       - regex: '\brm\s+-rf'
 `)
-	code := run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
+	code := run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), io.Discard, cfgPath)
 	if code != 2 {
 		t.Errorf("exit code = %d, want 2", code)
+	}
+}
+
+func TestRun_DenyWritesReasonJSON(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := writeCfg(t, dir, `
+rules:
+  Bash:
+    deny:
+      - regex: '\brm\s+-rf'
+`)
+	var buf strings.Builder
+	run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), &buf, cfgPath)
+
+	var out map[string]string
+	if err := json.Unmarshal([]byte(buf.String()), &out); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v, got: %s", err, buf.String())
+	}
+	reason, ok := out["reason"]
+	if !ok {
+		t.Fatal("stdout JSON missing 'reason' field")
+	}
+	if !strings.Contains(reason, "Bash") {
+		t.Errorf("reason should contain tool name, got: %s", reason)
+	}
+	if !strings.Contains(reason, "rm -rf /") {
+		t.Errorf("reason should contain blocked value, got: %s", reason)
 	}
 }
 
@@ -92,7 +120,7 @@ rules:
     deny:
       - regex: '\brm\s+-rf'
 `)
-	run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), cfgPath)
+	run(strings.NewReader(bashPayload("rm -rf /", dir, "s1")), io.Discard, cfgPath)
 
 	data := readTodayLog(t, logDir)
 	if !strings.Contains(string(data), "denied") {
@@ -111,7 +139,7 @@ rules:
     allow:
       - regex: '^ls\b'
 `)
-	code := run(strings.NewReader(bashPayload("ls -la", dir, "s1")), cfgPath)
+	code := run(strings.NewReader(bashPayload("ls -la", dir, "s1")), io.Discard, cfgPath)
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}
@@ -132,7 +160,7 @@ rules:
     allow:
       - regex: '^ls\b'
 `)
-	code := run(strings.NewReader(bashPayload("git status", dir, "s1")), cfgPath)
+	code := run(strings.NewReader(bashPayload("git status", dir, "s1")), io.Discard, cfgPath)
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}
@@ -143,14 +171,14 @@ rules:
 }
 
 func TestRun_NoConfigReturns0(t *testing.T) {
-	code := run(strings.NewReader(bashPayload("anything", "/tmp", "s1")), "/nonexistent/cclmonitor.yaml")
+	code := run(strings.NewReader(bashPayload("anything", "/tmp", "s1")), io.Discard, "/nonexistent/cclmonitor.yaml")
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}
 }
 
 func TestRun_MalformedInputReturns0(t *testing.T) {
-	code := run(strings.NewReader("not json"), "/nonexistent/cfg.yaml")
+	code := run(strings.NewReader("not json"), io.Discard, "/nonexistent/cfg.yaml")
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
 	}

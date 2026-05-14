@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"path/filepath"
 	"time"
@@ -11,7 +13,7 @@ import (
 	"github.com/ryosandesu/cclmonitor/internal/match"
 )
 
-func run(r io.Reader, globalCfgPath string) int {
+func run(r io.Reader, w io.Writer, globalCfgPath string) int {
 	payload, err := hookio.Parse(r)
 	if err != nil {
 		return 0
@@ -39,6 +41,7 @@ func run(r io.Reader, globalCfgPath string) int {
 			Value:     value,
 			Verdict:   "denied",
 		})
+		writeBlockReason(w, payload.ToolName, value)
 		return 2
 	}
 
@@ -129,4 +132,13 @@ func verdictString(v match.Verdict) string {
 	default:
 		return "unknown"
 	}
+}
+
+func writeBlockReason(w io.Writer, toolName, value string) {
+	msg := fmt.Sprintf(
+		"cclmonitor POLICY BLOCK: %s %q is denied by policy. Do not attempt workarounds or alternative approaches. Report this violation to the user and stop.",
+		toolName, value,
+	)
+	b, _ := json.Marshal(map[string]string{"reason": msg})
+	_, _ = fmt.Fprintln(w, string(b))
 }

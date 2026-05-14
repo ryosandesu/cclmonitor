@@ -17,10 +17,13 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "test" {
 		os.Exit(runTestCmd(os.Args[2:]))
 	}
+	if len(os.Args) > 1 && os.Args[1] == "suggest" {
+		os.Exit(runSuggestCmd(os.Args[2:]))
+	}
 	if len(os.Args) > 1 && os.Args[1] == "post" {
 		os.Exit(runPost(os.Stdin, globalCfgPath()))
 	}
-	os.Exit(run(os.Stdin, globalCfgPath()))
+	os.Exit(run(os.Stdin, os.Stdout, globalCfgPath()))
 }
 
 func runTestCmd(args []string) int {

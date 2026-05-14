@@ -1,5 +1,6 @@
 # Build artifacts
 bin/
+/cclmonitor*
 
 # Nix
 .direnv/

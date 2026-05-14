@@ -45,6 +45,18 @@ var (
 	styleMuted     = lipgloss.NewStyle().Foreground(colorMuted)
 )
 
+func truncateValue(toolName, value string, maxLen int) string {
+	if len(value) <= maxLen {
+		return value
+	}
+	switch toolName {
+	case "Edit", "Write", "Read":
+		return "..." + value[len(value)-(maxLen-3):]
+	default:
+		return value[:maxLen-3] + "..."
+	}
+}
+
 func verdictStyle(verdict string) lipgloss.Style {
 	switch verdict {
 	case "executed":

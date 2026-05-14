@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -108,21 +109,27 @@ func complianceBar(v float64, width int) string {
 func renderRecentViolations(m model) string {
 	var sb strings.Builder
 	sb.WriteString(styleMuted.Render("Recent Violations") + "\n")
+
+	invs := make([]metrics.Invocation, len(m.invocations))
+	copy(invs, m.invocations)
+	sort.Slice(invs, func(i, j int) bool {
+		return invs[i].StartedAt.After(invs[j].StartedAt)
+	})
+
 	shown := 0
-	for i := len(m.recentEvts) - 1; i >= 0 && shown < 5; i-- {
-		e := m.recentEvts[i]
-		if e.Verdict != "denied" && e.Verdict != "cancelled" && e.Verdict != "unknown" {
+	for _, inv := range invs {
+		if shown >= 5 {
+			break
+		}
+		if inv.Outcome != "denied" && inv.Outcome != "cancelled" && inv.Outcome != "unknown" {
 			continue
 		}
-		ts := e.Time.Local().Format("15:04")
-		val := e.Value
-		if len(val) > 20 {
-			val = val[:17] + "..."
-		}
+		ts := inv.StartedAt.Local().Format("01/02 15:04")
+		val := truncateValue(inv.ToolName, inv.Value, 20)
 		line := fmt.Sprintf("  %s %s %-6s %s",
 			styleMuted.Render(ts),
-			verdictStyle(e.Verdict).Render(fmt.Sprintf("%-9s", e.Verdict)),
-			e.ToolName,
+			verdictStyle(inv.Outcome).Render(fmt.Sprintf("%-9s", inv.Outcome)),
+			inv.ToolName,
 			val,
 		)
 		sb.WriteString(line + "\n")
