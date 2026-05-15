@@ -6,7 +6,6 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 build:
 	go build $(LDFLAGS) -o bin/cclmonitor ./cmd/cclmonitor
 	go build -o bin/cclmonitor-install ./cmd/cclmonitor-install
-	go build -o bin/cclmonitor-tail ./cmd/cclmonitor-tail
 	go build $(LDFLAGS) -o bin/cclmonitor-ui ./cmd/cclmonitor-ui
 
 test:
@@ -18,12 +17,11 @@ install: build
 	mkdir -p $(BINDIR)
 	cp bin/cclmonitor $(BINDIR)/cclmonitor
 	cp bin/cclmonitor-install $(BINDIR)/cclmonitor-install
-	cp bin/cclmonitor-tail $(BINDIR)/cclmonitor-tail
 	cp bin/cclmonitor-ui $(BINDIR)/cclmonitor-ui
 	$(BINDIR)/cclmonitor-install
 	@echo ""
 	@echo "------------------------------------------------------"
-	@echo "次の行を ~/.zshrc に追加すると cclmonitor-tail などを"
+	@echo "次の行を ~/.zshrc に追加すると cclmonitor test などを"
 	@echo "ターミナルから直接実行できます："
 	@echo "  export PATH=\"\$$HOME/bin:\$$PATH\""
 	@echo "追加後: source ~/.zshrc"
@@ -32,7 +30,6 @@ install: build
 uninstall:
 	rm -f $(BINDIR)/cclmonitor
 	rm -f $(BINDIR)/cclmonitor-install
-	rm -f $(BINDIR)/cclmonitor-tail
 	rm -f $(BINDIR)/cclmonitor-ui
 	@if [ -f ~/.claude/settings.json.bak ]; then \
 		cp ~/.claude/settings.json.bak ~/.claude/settings.json; \

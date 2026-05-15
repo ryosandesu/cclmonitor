@@ -29,7 +29,6 @@ Claude Code  →  PreToolUse hook (cclmonitor)
 - **Accurate execution record** — PostToolUse hook confirms the tool actually ran
 - **Project overrides** — per-repo `.claude/cclmonitor.yaml` merges with global config
 - **Dry-run mode** — `cclmonitor test` evaluates a value without blocking anything
-- **Live log viewer** — `cclmonitor-tail` streams color-coded events to your terminal
 - **TUI dashboard** — `cclmonitor-ui` shows Compliance & Coverage scores, per-tool breakdown, 30-day heatmap, and live event feed
 
 ---
@@ -48,7 +47,7 @@ make install
 
 `make install` builds the binaries, copies them to `~/bin/`, and **auto-registers both hooks** (PreToolUse and PostToolUse) in `~/.claude/settings.json` (a backup is saved as `settings.json.bak`).
 
-To use `cclmonitor-tail` and `cclmonitor test` from the terminal, add `~/bin/` to your PATH:
+To use `cclmonitor test` from the terminal, add `~/bin/` to your PATH:
 
 ```sh
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
@@ -65,7 +64,6 @@ cd cclmonitor
 # Build all binaries
 go build -o bin\cclmonitor.exe .\cmd\cclmonitor
 go build -o bin\cclmonitor-install.exe .\cmd\cclmonitor-install
-go build -o bin\cclmonitor-tail.exe .\cmd\cclmonitor-tail
 go build -o bin\cclmonitor-ui.exe .\cmd\cclmonitor-ui
 
 # Install to %USERPROFILE%\bin and register hooks
@@ -76,7 +74,7 @@ Move-Item -Force bin\*.exe "$HOME\bin\"
 
 This registers the hooks in `%USERPROFILE%\.claude\settings.json` (a backup is saved as `settings.json.bak`).
 
-To use `cclmonitor-tail` and `cclmonitor test` from any terminal, add `%USERPROFILE%\bin` to your PATH:
+To use `cclmonitor test` from any terminal, add `%USERPROFILE%\bin` to your PATH:
 
 ```powershell
 [Environment]::SetEnvironmentVariable("Path", "$env:Path;$HOME\bin", "User")
@@ -295,24 +293,6 @@ A high `unknown` count means your rules have gaps — operations are running wit
 | High | Low | Claude is well-behaved but rules have gaps (many `unknown`) |
 | Low | High | Rules are thorough but Claude frequently attempts blocked operations |
 | Low | Low | Rules are incomplete and Claude is frequently out of policy ⚠️ |
-
-### `cclmonitor-tail`
-
-Stream today's audit log to your terminal with color-coded verdicts.
-
-```sh
-cclmonitor-tail
-```
-
-```
-14:32:01 [executed] Bash: ls -la
-14:32:05 [denied  ] Bash: rm -rf /tmp
-14:32:10 [unknown ] Write: /tmp/output.txt
-```
-
-<span style="color:green">■</span> green = executed &nbsp; <span style="color:red">■</span> red = denied &nbsp; <span style="color:#b5a000">■</span> yellow = unknown &nbsp; <span style="color:cyan">■</span> cyan = interrupted &nbsp; <span style="color:blue">■</span> blue = pending
-
----
 
 ## Audit Log
 

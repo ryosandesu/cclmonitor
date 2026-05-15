@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/ryosandesu/cclmonitor/internal/eventlog"
+)
 
 // DailyBucket は 1 日分の集計結果。
 type DailyBucket struct {
@@ -12,7 +16,7 @@ type DailyBucket struct {
 // now から days 日前まで（今日含む）の連続したバケットを生成し、
 // データがない日は Stats がゼロ値（Compliance/Coverage は -1）のバケットで埋める。
 func Daily(invs []Invocation, days int, now time.Time) []DailyBucket {
-	today := truncateDay(now)
+	today := eventlog.TruncateDay(now)
 	buckets := make([]DailyBucket, days)
 	for i := range buckets {
 		d := today.AddDate(0, 0, -(days-1-i))
@@ -21,7 +25,7 @@ func Daily(invs []Invocation, days int, now time.Time) []DailyBucket {
 
 	groups := map[time.Time][]Invocation{}
 	for _, inv := range invs {
-		d := truncateDay(inv.StartedAt)
+		d := eventlog.TruncateDay(inv.StartedAt)
 		groups[d] = append(groups[d], inv)
 	}
 
@@ -31,9 +35,4 @@ func Daily(invs []Invocation, days int, now time.Time) []DailyBucket {
 		}
 	}
 	return buckets
-}
-
-func truncateDay(t time.Time) time.Time {
-	y, m, d := t.Date()
-	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
 }

@@ -23,6 +23,16 @@ func writeTestLog(t *testing.T, dir string, date time.Time, events []Event) {
 	}
 }
 
+func TestTruncateDay(t *testing.T) {
+	loc := time.FixedZone("JST", 9*60*60)
+	in := time.Date(2024, 1, 15, 14, 30, 45, 0, loc)
+	want := time.Date(2024, 1, 15, 0, 0, 0, 0, loc)
+	got := TruncateDay(in)
+	if !got.Equal(want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestReadRange(t *testing.T) {
 	dir := t.TempDir()
 	base := time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)

@@ -18,6 +18,13 @@ import (
 	"github.com/ryosandesu/cclmonitor/internal/suggest"
 )
 
+const (
+	defaultSuggestDays    = 30
+	defaultSuggestMin     = 5
+	defaultSuggestThresh  = 10
+	defaultSuggestTarget  = "global"
+)
+
 type suggestOpts struct {
 	Days               int
 	MinCount           int
@@ -32,10 +39,10 @@ type suggestOpts struct {
 
 func runSuggestCmd(args []string) int {
 	fs := flag.NewFlagSet("suggest", flag.ExitOnError)
-	days := fs.Int("days", 30, "lookback window in days")
-	minCount := fs.Int("min-count", 5, "minimum hits required for a suggestion")
-	target := fs.String("target", "global", "write target: global or project")
-	thresh := fs.Int("insufficient-threshold", 10, "below this event count, fall back to defaults mode")
+	days := fs.Int("days", defaultSuggestDays, "lookback window in days")
+	minCount := fs.Int("min-count", defaultSuggestMin, "minimum hits required for a suggestion")
+	target := fs.String("target", defaultSuggestTarget, "write target: global or project")
+	thresh := fs.Int("insufficient-threshold", defaultSuggestThresh, "below this event count, fall back to defaults mode")
 	dryRun := fs.Bool("dry-run", false, "do not write; show only")
 	_ = fs.Parse(args)
 

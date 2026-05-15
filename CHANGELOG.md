@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.8.0] - 2026-05-15
+
+### Removed
+- `cclmonitor-tail` binary — live log viewer superseded by the Events tab in `cclmonitor-ui`
+
+### Changed
+- `cclmonitor suggest` flag defaults extracted as named constants in `suggest.go`
+- `eventlog.TruncateDay` exported and shared with `metrics` to remove duplicate implementation
+
 ## [v0.7.0] - 2026-05-12
 
 ### Added

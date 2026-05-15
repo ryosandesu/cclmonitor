@@ -12,7 +12,7 @@ import (
 // Missing files and corrupt JSON lines are silently skipped.
 func ReadRange(dir string, from, to time.Time) ([]Event, error) {
 	var events []Event
-	for d := truncateDay(from); d.Before(to); d = d.AddDate(0, 0, 1) {
+	for d := TruncateDay(from); d.Before(to); d = d.AddDate(0, 0, 1) {
 		path := filepath.Join(dir, "cclmonitor."+d.Format("2006-01-02")+".log")
 		f, err := os.Open(path)
 		if os.IsNotExist(err) {
@@ -75,7 +75,7 @@ func (r *Reader) Close() error {
 	return r.file.Close()
 }
 
-func truncateDay(t time.Time) time.Time {
+func TruncateDay(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
 }
