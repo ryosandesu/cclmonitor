@@ -43,6 +43,10 @@
 
 **Prerequisites:** Go 1.26+, Claude Code
 
+> **Note:** cclmonitor is developed and tested on macOS.
+> Linux and Windows builds are provided but have not been verified on real hardware —
+> issues specific to non-macOS environments may not be addressed promptly.
+
 ### macOS / Linux
 
 ```sh
@@ -342,6 +346,8 @@ Each line is a JSON object:
 ```json
 {"time":"2024-01-15T14:32:05Z","session_id":"abc123","tool_name":"Bash","value":"rm -rf /tmp","verdict":"denied"}
 ```
+
+> **Note:** The `value` field records the raw tool input — the full command string for `Bash`, or the file path for `Edit`/`Write`/`Read`. Avoid running commands that contain secrets (tokens, passwords) in environments where the log files may be read by others.
 
 ### Verdicts
 
