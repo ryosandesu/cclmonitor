@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.9.0] - 2026-05-16
+
+### Added
+- GitHub Actions CI workflow (`.github/workflows/ci.yml`) — runs unit tests and integration tests on every push and pull request to `main`
+
 ## [v0.8.1] - 2026-05-16
 
 ### Added
