@@ -61,8 +61,11 @@ internal/match/
 # Build all binaries to bin/
 make build
 
-# Run all tests
+# Run all unit tests
 make test
+
+# Run integration tests (builds and invokes the binary as a subprocess)
+make test-integration
 
 # Run tests for a specific package (with verbose output)
 go test -v ./internal/match/

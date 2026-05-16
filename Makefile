@@ -1,4 +1,4 @@
-.PHONY: build test install uninstall licenses
+.PHONY: build test test-integration install uninstall licenses
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -10,6 +10,9 @@ build:
 
 test:
 	go test ./...
+
+test-integration:
+	go test -tags integration ./tests/...
 
 BINDIR := $(HOME)/bin
 
