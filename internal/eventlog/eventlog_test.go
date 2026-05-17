@@ -103,11 +103,11 @@ func TestCleanOldLogs_DeletesOldFiles(t *testing.T) {
 	now := time.Now()
 
 	files := map[string]bool{
-		"cclmonitor." + now.Format("2006-01-02") + ".log":                     true,  // 今日: 保持
-		"cclmonitor." + now.AddDate(0, 0, -29).Format("2006-01-02") + ".log": true,  // 29日前: 保持
-		"cclmonitor." + now.AddDate(0, 0, -30).Format("2006-01-02") + ".log": false, // 30日前: 削除
-		"cclmonitor." + now.AddDate(0, 0, -31).Format("2006-01-02") + ".log": false, // 31日前: 削除
-		"other.log": true, // 無関係なファイル: 触らない
+		"cclmonitor." + now.Format("2006-01-02") + ".log":                     true,  // today: keep
+		"cclmonitor." + now.AddDate(0, 0, -29).Format("2006-01-02") + ".log": true,  // 29 days ago: keep
+		"cclmonitor." + now.AddDate(0, 0, -30).Format("2006-01-02") + ".log": false, // 30 days ago: delete
+		"cclmonitor." + now.AddDate(0, 0, -31).Format("2006-01-02") + ".log": false, // 31 days ago: delete
+		"other.log": true, // unrelated file: leave untouched
 	}
 	for name := range files {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0600); err != nil {
@@ -137,7 +137,7 @@ func TestCleanOldLogs_DefaultsTo30Days(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	CleanOldLogs(dir, 0) // 0 はデフォルト30日として扱う
+	CleanOldLogs(dir, 0) // 0 is treated as the default 30-day retention
 
 	if _, err := os.Stat(filepath.Join(dir, old)); err == nil {
 		t.Error("31-day-old file should be deleted with default 30-day retention")

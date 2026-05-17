@@ -75,7 +75,7 @@ func runPost(r io.Reader, globalCfgPath string) int {
 		return 0
 	}
 
-	// deny はPreToolUseでブロック済みのためPostToolUseには届かない
+	// deny is blocked in PreToolUse and never reaches PostToolUse
 	if verdict == match.Deny {
 		return 0
 	}

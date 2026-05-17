@@ -72,7 +72,7 @@ func TestEvaluate_Unknown(t *testing.T) {
 }
 
 func TestEvaluate_DenyBeforeAllow(t *testing.T) {
-	// deny と allow 両方にマッチする場合は deny が優先
+	// deny takes precedence when both deny and allow rules match
 	rules := config.ToolRules{
 		Allow: []config.Rule{{Regex: `^rm\b`}},
 		Deny:  []config.Rule{{Regex: `\brm\s+-rf\s+/`}},

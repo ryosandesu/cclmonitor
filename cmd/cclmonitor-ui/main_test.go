@@ -66,7 +66,7 @@ func TestResolveLogDir_UsesCfgLogDir(t *testing.T) {
 
 func TestResolveLogDir_FallsBackToDefault(t *testing.T) {
 	home := t.TempDir()
-	cfgPath := filepath.Join(home, ".claude", "cclmonitor.yaml") // 存在しない
+	cfgPath := filepath.Join(home, ".claude", "cclmonitor.yaml") // does not exist
 	got := resolveLogDir("", cfgPath, home)
 	want := filepath.Join(home, ".claude")
 	if got != want {

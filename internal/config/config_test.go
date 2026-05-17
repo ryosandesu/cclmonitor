@@ -160,7 +160,7 @@ func TestMerge_NilProject(t *testing.T) {
 	}
 }
 
-// グローバルとプロジェクトの deny は両方が適用される
+// deny rules from both global and project configs are applied
 func TestMerge_DenyIsAdditive(t *testing.T) {
 	global := &Config{
 		Rules: map[string]ToolRules{

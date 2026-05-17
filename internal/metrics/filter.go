@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// FilterOpts は Filter の絞り込み条件。
-// ゼロ値は「条件なし（全件対象）」を意味する。
+// FilterOpts specifies the criteria for Filter.
+// Zero values mean "no restriction (all events)".
 type FilterOpts struct {
 	From  time.Time
 	To    time.Time
-	Tools []string // 空なら全ツール
+	Tools []string // empty means all tools
 }
 
-// Filter は opts に合致する Invocation だけ返す。
+// Filter returns only the Invocations that match opts.
 func Filter(invs []Invocation, opts FilterOpts) []Invocation {
 	toolSet := make(map[string]bool, len(opts.Tools))
 	for _, t := range opts.Tools {
@@ -36,7 +36,7 @@ func Filter(invs []Invocation, opts FilterOpts) []Invocation {
 	return result
 }
 
-// PerTool は ToolName をキーに Stats を算出して返す。
+// PerTool returns a Stats map keyed by ToolName.
 func PerTool(invs []Invocation) map[string]Stats {
 	groups := map[string][]Invocation{}
 	for _, inv := range invs {
@@ -49,14 +49,14 @@ func PerTool(invs []Invocation) map[string]Stats {
 	return result
 }
 
-// ValueCount は Value ごとの出現回数。
+// ValueCount holds the occurrence count for a distinct Value.
 type ValueCount struct {
 	Value string
 	Count int
 }
 
-// TopOffenders は outcomes に該当する Invocation を Value 別に集計し、
-// 出現回数降順で上位 limit 件を返す。
+// TopOffenders aggregates Invocations with the given outcomes by Value
+// and returns up to limit entries sorted by count descending.
 func TopOffenders(invs []Invocation, outcomes []string, limit int) []ValueCount {
 	outcomeSet := make(map[string]bool, len(outcomes))
 	for _, o := range outcomes {

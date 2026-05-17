@@ -50,7 +50,7 @@ func renderCoverageCard(s metrics.Stats, width int) string {
 	score := formatScore(s.Coverage, colorCoverage)
 	hint := ""
 	if s.Coverage != -1 && s.Coverage < 0.8 {
-		hint = "\n  " + styleUnknown.Render("→ ルール追加を検討")
+		hint = "\n  " + styleUnknown.Render("→ consider adding rules")
 	}
 	counts := fmt.Sprintf("  unknown: %d", s.Unknown) + hint
 	body := title + "\n\n" + score + "\n\n" + counts

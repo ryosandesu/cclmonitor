@@ -30,7 +30,7 @@ const (
 	tabEvents
 )
 
-// model は TUI の全状態を保持する（Bubble Tea の tea.Model インタフェースを実装）。
+// model holds the full TUI state and implements tea.Model.
 type model struct {
 	logDir    string
 	grace     time.Duration
@@ -41,19 +41,19 @@ type model struct {
 	width     int
 	height    int
 
-	// 集計済みデータ
+	// aggregated data
 	invocations []metrics.Invocation
 	stats       metrics.Stats
 	perTool     map[string]metrics.Stats
 	daily       []metrics.DailyBucket
 	offenders   []metrics.ValueCount
-	recentEvts  []eventlog.Event // 生イベント（Events タブ用）
+	recentEvts  []eventlog.Event // raw events for the Events tab
 
-	// ライブ更新用
+	// live update state
 	reader    *eventlog.Reader
 	readerDay string // "2006-01-02"
 
-	// Events タブ用スクロール位置
+	// scroll offset for the Events tab
 	eventsOffset int
 }
 
@@ -148,37 +148,37 @@ func (m model) View() string {
 	return header + "\n" + body
 }
 
-// reload は現在の period に合わせてログを全件読み直す。
+// reload re-reads all log events for the current period.
 func (m *model) reload() {
 	now := time.Now()
 	from, to := m.periodRange(now)
 
-	// 期間フィルタ分（カード・ツール集計用）
+	// period-filtered events for cards and per-tool stats
 	evts, err := eventlog.ReadRange(m.logDir, from, to)
 	if err != nil {
 		return
 	}
 	m.recentEvts = evts
 
-	// Timeline は常に 30 日分（期間フィルタに依存しない）
+	// Timeline always covers 30 days regardless of the period filter.
 	y, mo, d := now.Date()
 	todayStart := time.Date(y, mo, d, 0, 0, 0, 0, now.Location())
 	thirtyFrom := todayStart.AddDate(0, 0, -29)
 	allEvts, _ := eventlog.ReadRange(m.logDir, thirtyFrom, to)
 	m.recalc(now, allEvts)
 
-	// ライブ更新用 Reader を今日のファイルに向ける
+	// point the live-update Reader at today's log file
 	if !m.snapshot {
 		m.initReader(now)
 	}
 }
 
-// poll は今日の増分イベントを Reader から取得して集計に加算する。
+// poll fetches incremental events from the Reader and appends them to the aggregation.
 func (m *model) poll() {
 	now := time.Now()
 	today := now.Format("2006-01-02")
 
-	// 日付ロールオーバー検出
+	// date rollover: reload everything
 	if today != m.readerDay {
 		m.reload()
 		return
@@ -194,7 +194,7 @@ func (m *model) poll() {
 	}
 	m.recentEvts = append(m.recentEvts, newEvts...)
 
-	// Timeline 用の 30 日分にも今日の増分を反映
+	// reflect today's incremental events in the 30-day Timeline as well
 	y, mo, d := now.Date()
 	todayStart := time.Date(y, mo, d, 0, 0, 0, 0, now.Location())
 	thirtyFrom := todayStart.AddDate(0, 0, -29)
@@ -202,7 +202,7 @@ func (m *model) poll() {
 	m.recalc(now, allEvts)
 }
 
-// recalc は recentEvts から期間フィルタ分を、allEvts から Timeline 分を計算する。
+// recalc recomputes stats from recentEvts (period filter) and allEvts (Timeline).
 func (m *model) recalc(now time.Time, allEvts []eventlog.Event) {
 	invs := metrics.PairInvocations(m.recentEvts, now, m.grace)
 	m.invocations = invs
@@ -210,16 +210,16 @@ func (m *model) recalc(now time.Time, allEvts []eventlog.Event) {
 	m.perTool = metrics.PerTool(invs)
 	m.offenders = metrics.TopOffenders(invs, []string{"denied", "unknown"}, 10)
 
-	// Timeline は常に 30 日分の invocations から算出
+	// Timeline always derives from 30 days of invocations.
 	allInvs := metrics.PairInvocations(allEvts, now, m.grace)
 	m.daily = metrics.Daily(allInvs, 30, now)
 }
 
-// periodRange は現在の period 設定から from/to を返す。
+// periodRange returns the from/to time range for the current period.
 func (m *model) periodRange(now time.Time) (from, to time.Time) {
 	y, mo, d := now.Date()
 	todayStart := time.Date(y, mo, d, 0, 0, 0, 0, now.Location())
-	to = now.Add(time.Second) // to は排他的なので少し先
+	to = now.Add(time.Second) // to is exclusive, so extend slightly
 
 	switch m.period {
 	case periodToday:
@@ -229,7 +229,7 @@ func (m *model) periodRange(now time.Time) (from, to time.Time) {
 	case period30d:
 		from = todayStart.AddDate(0, 0, -29)
 	case periodAll:
-		from = time.Time{} // ゼロ値 = 制限なし
+		from = time.Time{} // zero value = no lower bound
 	}
 	return from, to
 }
@@ -249,7 +249,7 @@ func (m *model) initReader(now time.Time) {
 	if err != nil {
 		return
 	}
-	// 既に全件を ReadRange で読んでいるので、Poll で重複しないよう末尾まで進める
+	// ReadRange already consumed all events; advance to the end so Poll does not duplicate them.
 	r.Poll() //nolint
 	m.reader = r
 	m.readerDay = day

@@ -1,6 +1,6 @@
 # cclmonitor
 
-> Policy-based hook for Claude Code — audit and block tool calls in real time.
+> Policy-based audit hook for Claude Code — log, score, and evolve your tool-call rules over time.
 
 [![Go](https://img.shields.io/badge/go-1.21+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,6 +14,8 @@
 ## Table of Contents
 
 - [Features](#features)
+- [Why cclmonitor](#why-cclmonitor)
+- [Security model](#security-model)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Commands](#commands)
@@ -36,6 +38,38 @@
 - **Project overrides** — per-repo `.claude/cclmonitor.yaml` merges with global config
 - **Dry-run mode** — `cclmonitor test` evaluates a value without blocking anything
 - **TUI dashboard** — `cclmonitor-ui` shows Compliance & Coverage scores, per-tool breakdown, 30-day trend, and live event feed
+
+---
+
+## Why cclmonitor
+
+Several tools block dangerous Claude Code commands. cclmonitor's focus is different: **audit + observability + rule evolution**.
+
+|  | cclmonitor | [claude-code-safety-net](https://github.com/kenryu42/claude-code-safety-net) | Built-in `settings.json` |
+|---|:---:|:---:|:---:|
+| Block dangerous calls | ✓ | ✓ | ✓ |
+| JSONL audit log (5 verdicts) | ✓ | — | — |
+| Compliance / Coverage scores | ✓ | — | — |
+| Live TUI dashboard | ✓ | — | — |
+| Rule suggestions from logs | ✓ | — | — |
+| Per-project config override | ✓ | — | partial |
+| Multi-CLI support (Codex, Gemini, …) | — | ✓ | — |
+
+If you only want blocking and don't need audit or observability, the built-in `settings.json` permissions or a simpler hook are the right choice.
+
+---
+
+## Security model
+
+cclmonitor is **not** a sandbox or a security boundary. Regex and glob rules are trivially bypassable by anyone — or any model — that tries to bypass them.
+
+What it is designed for:
+
+- **Accident prevention** — LLMs don't usually try to evade your rules; they sometimes generate `rm -rf ./build/../..` after a confused refactor. Regex catches that class of mistake well.
+- **Audit trail** — when something slips through, you have a JSONL record correlated by `tool_use_id`, and a Coverage Score that surfaces policy gaps instead of hiding them.
+- **Policy observability** — Compliance and Coverage scores tell you whether your rules are working *and* whether they're complete.
+
+If you need a true security boundary against an adversarial model, you want a sandbox (Firecracker, gVisor, a dedicated VM) — not a hook running in the same process tree.
 
 ---
 

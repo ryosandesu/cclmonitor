@@ -1,7 +1,7 @@
 package metrics
 
-// Stats は期間内の集計結果を保持する。
-// Compliance / Coverage が -1 のときは分母ゼロ（N/A）を意味する。
+// Stats holds aggregated results for a time period.
+// Compliance / Coverage of -1 means the denominator was zero (N/A).
 type Stats struct {
 	Compliance  float64
 	Coverage    float64
@@ -12,7 +12,7 @@ type Stats struct {
 	Interrupted int
 }
 
-// Summarize は Invocation のスライスから Stats を算出する。
+// Summarize computes Stats from a slice of Invocations.
 func Summarize(invs []Invocation) Stats {
 	s := Stats{}
 	for _, inv := range invs {
