@@ -1,6 +1,6 @@
 eventlog:
-  logdir: ~/.claude/logs        # ログ保存先（省略時: ~/.claude/）
-  retain_days: 30               # ログファイルを何日間保持するか
+  logdir: ~/.claude/logs        # log directory (default: ~/.claude/)
+  retain_days: 30               # number of days to retain log files
 
 rules:
   Bash:

@@ -6,8 +6,8 @@ import (
 	"github.com/ryosandesu/cclmonitor/internal/eventlog"
 )
 
-// Invocation は 1 回のツール呼び出しを表す。
-// PreToolUse の pending と PostToolUse を tool_use_id でペアリングして生成する。
+// Invocation represents one tool call, produced by pairing a PreToolUse
+// pending event with its PostToolUse counterpart via tool_use_id.
 type Invocation struct {
 	ToolUseID string
 	ToolName  string
@@ -17,8 +17,8 @@ type Invocation struct {
 	SessionID string
 }
 
-// PairInvocations は events を Invocation に集約する。
-// gracePeriod 以内の pending で Post 未到達のものは in-flight として除外する。
+// PairInvocations aggregates events into Invocations.
+// Pending events within gracePeriod that have no matching PostToolUse are treated as in-flight and excluded.
 func PairInvocations(events []eventlog.Event, now time.Time, grace time.Duration) []Invocation {
 	type pair struct {
 		pre  *eventlog.Event
@@ -37,7 +37,7 @@ func PairInvocations(events []eventlog.Event, now time.Time, grace time.Duration
 		case "pending":
 			p.pre = e
 		case "denied":
-			// denied は PreToolUse 単独で発生する（pending を経由しない）
+			// denied is self-contained in PreToolUse and has no pending entry
 			p.pre = e
 			p.post = e // sentinel: same pointer means "self-contained"
 		default:

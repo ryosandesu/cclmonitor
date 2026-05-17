@@ -6,15 +6,15 @@ import (
 	"github.com/ryosandesu/cclmonitor/internal/eventlog"
 )
 
-// DailyBucket は 1 日分の集計結果。
+// DailyBucket holds the aggregated stats for one day.
 type DailyBucket struct {
 	Date  time.Time
 	Stats Stats
 }
 
-// Daily は invs を日次バケットに分割して返す。
-// now から days 日前まで（今日含む）の連続したバケットを生成し、
-// データがない日は Stats がゼロ値（Compliance/Coverage は -1）のバケットで埋める。
+// Daily splits invs into daily buckets and returns them.
+// It generates a contiguous sequence of days from (now - days + 1) to today,
+// filling days with no data with zero-value Stats (Compliance/Coverage = -1).
 func Daily(invs []Invocation, days int, now time.Time) []DailyBucket {
 	today := eventlog.TruncateDay(now)
 	buckets := make([]DailyBucket, days)

@@ -49,8 +49,8 @@ func main() {
 	}
 }
 
-// resolveGrace は grace period の決定順序を実装する。
-// --grace フラグ（> 0）> 設定ファイルの grace_sec > デフォルト 60 秒
+// resolveGrace resolves the grace period in priority order:
+// --grace flag (> 0) > config grace_sec > default 60s
 func resolveGrace(flag time.Duration, cfgPath string) time.Duration {
 	if flag > 0 {
 		return flag
@@ -61,8 +61,8 @@ func resolveGrace(flag time.Duration, cfgPath string) time.Duration {
 	return 60 * time.Second
 }
 
-// resolveLogDir は logdir の決定順序を実装する。
-// --logdir フラグ > 設定ファイルの eventlog.logdir > デフォルト ~/.claude/
+// resolveLogDir resolves the log directory in priority order:
+// --logdir flag > config eventlog.logdir > default ~/.claude/
 func resolveLogDir(flag, cfgPath, home string) string {
 	expandTilde := func(p string) string {
 		if strings.HasPrefix(p, "~/") {
