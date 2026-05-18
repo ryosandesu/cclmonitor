@@ -12,15 +12,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * compile regex at load time and add untracked verdict ([8276ca2](https://github.com/ryosandesu/cclmonitor/commit/8276ca2c1ebf3bd4319384c8dc520788e3e30b63))
 * detect invalid regex at load time and add untracked verdict ([230d848](https://github.com/ryosandesu/cclmonitor/commit/230d8480b965f102bff6ad14164386aca0184808))
 
-## [v0.9.1] - 2026-05-18
-
-### Fixed
-- Regex patterns in YAML config are now compiled at load time; invalid patterns are reported as an error instead of silently passing all tool calls through
-- Tools not supported by cclmonitor (e.g. WebSearch) are now logged as `untracked` instead of `unknown` in PostToolUse
-
-### Changed
-- `untracked` verdict is excluded from Rule Coverage calculation in the UI
-
 ## [v0.9.0] - 2026-05-16
 
 ### Added
