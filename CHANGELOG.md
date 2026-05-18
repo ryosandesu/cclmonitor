@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.1](https://github.com/ryosandesu/cclmonitor/compare/v0.9.0...v0.9.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* compile regex at load time and add untracked verdict ([8276ca2](https://github.com/ryosandesu/cclmonitor/commit/8276ca2c1ebf3bd4319384c8dc520788e3e30b63))
+* detect invalid regex at load time and add untracked verdict ([230d848](https://github.com/ryosandesu/cclmonitor/commit/230d8480b965f102bff6ad14164386aca0184808))
+
 ## [v0.9.1] - 2026-05-18
 
 ### Fixed
