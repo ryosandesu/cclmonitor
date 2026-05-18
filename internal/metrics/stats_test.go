@@ -52,7 +52,7 @@ func TestSummarize(t *testing.T) {
 	})
 
 	t.Run("counts are accurate", func(t *testing.T) {
-		invs := invocations("executed", "executed", "denied", "cancelled", "unknown", "interrupted")
+		invs := invocations("executed", "executed", "denied", "cancelled", "unknown", "untracked", "interrupted")
 		s := Summarize(invs)
 		if s.Executed != 2 {
 			t.Errorf("executed: want 2, got %d", s.Executed)
@@ -66,8 +66,23 @@ func TestSummarize(t *testing.T) {
 		if s.Unknown != 1 {
 			t.Errorf("unknown: want 1, got %d", s.Unknown)
 		}
+		if s.Untracked != 1 {
+			t.Errorf("untracked: want 1, got %d", s.Untracked)
+		}
 		if s.Interrupted != 1 {
 			t.Errorf("interrupted: want 1, got %d", s.Interrupted)
+		}
+	})
+
+	t.Run("untracked does not affect coverage", func(t *testing.T) {
+		// coverage = (executed+denied)/(executed+denied+unknown) = 2/3 ≒ 0.667
+		invs := invocations("executed", "denied", "unknown", "untracked", "untracked")
+		s := Summarize(invs)
+		if s.Coverage < 0.665 || s.Coverage > 0.668 {
+			t.Errorf("want ~0.667, got %f", s.Coverage)
+		}
+		if s.Untracked != 2 {
+			t.Errorf("untracked count: want 2, got %d", s.Untracked)
 		}
 	})
 }

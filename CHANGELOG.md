@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.9.1] - 2026-05-18
+
+### Fixed
+- Regex patterns in YAML config are now compiled at load time; invalid patterns are reported as an error instead of silently passing all tool calls through
+- Tools not supported by cclmonitor (e.g. WebSearch) are now logged as `untracked` instead of `unknown` in PostToolUse
+
+### Changed
+- `untracked` verdict is excluded from Rule Coverage calculation in the UI
+
 ## [v0.9.0] - 2026-05-16
 
 ### Added

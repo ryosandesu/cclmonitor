@@ -18,6 +18,19 @@ func writeCfg(t *testing.T, dir, content string) string {
 	return path
 }
 
+func webSearchPayload(query, cwd, session string) string {
+	input, _ := json.Marshal(map[string]string{"query": query})
+	p := map[string]any{
+		"tool_name":   "WebSearch",
+		"tool_input":  json.RawMessage(input),
+		"cwd":         cwd,
+		"session_id":  session,
+		"tool_use_id": "toolu_test01",
+	}
+	b, _ := json.Marshal(p)
+	return string(b)
+}
+
 func bashPayload(cmd, cwd, session string) string {
 	input, _ := json.Marshal(map[string]string{"command": cmd})
 	p := map[string]any{
@@ -259,6 +272,31 @@ rules:
 	data := readTodayLog(t, logDir)
 	if !strings.Contains(string(data), "interrupted") {
 		t.Errorf("log should contain 'interrupted', got: %s", data)
+	}
+}
+
+func TestRun_UntrackedToolWritesPendingLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, "eventlog:\n  logdir: "+logDir+"\n")
+	code := run(strings.NewReader(webSearchPayload("golang", dir, "s1")), io.Discard, cfgPath)
+	if code != 0 {
+		t.Errorf("exit code = %d, want 0", code)
+	}
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "pending") {
+		t.Errorf("log should contain 'pending', got: %s", data)
+	}
+}
+
+func TestRunPost_UntrackedToolWritesUntrackedLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, "eventlog:\n  logdir: "+logDir+"\n")
+	runPost(strings.NewReader(webSearchPayload("golang", dir, "s1")), cfgPath)
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "untracked") {
+		t.Errorf("log should contain 'untracked', got: %s", data)
 	}
 }
 
