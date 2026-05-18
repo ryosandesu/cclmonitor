@@ -121,7 +121,7 @@ func renderRecentViolations(m model) string {
 		if shown >= 5 {
 			break
 		}
-		if inv.Outcome != "denied" && inv.Outcome != "cancelled" && inv.Outcome != "unknown" {
+		if inv.Outcome != "denied" && inv.Outcome != "cancelled" && inv.Outcome != "unknown" && inv.Outcome != "untracked" {
 			continue
 		}
 		ts := inv.StartedAt.Local().Format("01/02 15:04")

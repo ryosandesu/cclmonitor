@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -24,8 +26,9 @@ type ToolRules struct {
 }
 
 type Rule struct {
-	Regex string `yaml:"regex"`
-	Glob  string `yaml:"glob"`
+	Regex      string         `yaml:"regex"`
+	Glob       string         `yaml:"glob"`
+	CompiledRe *regexp.Regexp `yaml:"-"`
 }
 
 func LoadFile(path string) (*Config, error) {
@@ -37,7 +40,33 @@ func LoadFile(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
+	for tool, rules := range cfg.Rules {
+		allow, err := compileRules(rules.Allow)
+		if err != nil {
+			return nil, fmt.Errorf("tool %s allow: %w", tool, err)
+		}
+		deny, err := compileRules(rules.Deny)
+		if err != nil {
+			return nil, fmt.Errorf("tool %s deny: %w", tool, err)
+		}
+		cfg.Rules[tool] = ToolRules{Allow: allow, Deny: deny}
+	}
 	return &cfg, nil
+}
+
+func compileRules(rules []Rule) ([]Rule, error) {
+	out := make([]Rule, len(rules))
+	for i, r := range rules {
+		out[i] = r
+		if r.Regex != "" {
+			re, err := regexp.Compile(r.Regex)
+			if err != nil {
+				return nil, fmt.Errorf("invalid regex %q: %w", r.Regex, err)
+			}
+			out[i].CompiledRe = re
+		}
+	}
+	return out, nil
 }
 
 // ExpandCwd returns a new Config with <cwd> tokens in glob patterns replaced by cwd.
@@ -59,8 +88,9 @@ func expandRules(rules []Rule, cwd string) []Rule {
 	result := make([]Rule, len(rules))
 	for i, r := range rules {
 		result[i] = Rule{
-			Regex: r.Regex,
-			Glob:  strings.ReplaceAll(r.Glob, "<cwd>", cwd),
+			Regex:      r.Regex,
+			Glob:       strings.ReplaceAll(r.Glob, "<cwd>", cwd),
+			CompiledRe: r.CompiledRe,
 		}
 	}
 	return result

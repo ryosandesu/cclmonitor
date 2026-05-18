@@ -9,6 +9,7 @@ type Stats struct {
 	Denied      int
 	Cancelled   int
 	Unknown     int
+	Untracked   int
 	Interrupted int
 }
 
@@ -25,6 +26,8 @@ func Summarize(invs []Invocation) Stats {
 			s.Cancelled++
 		case "unknown":
 			s.Unknown++
+		case "untracked":
+			s.Untracked++
 		case "interrupted":
 			s.Interrupted++
 		}

@@ -75,13 +75,40 @@ If you need a true security boundary against an adversarial model, you want a sa
 
 ## Installation
 
-**Prerequisites:** Go 1.26+, Claude Code
+**Prerequisites:** Claude Code
 
 > **Note:** cclmonitor is developed and tested on macOS.
 > Linux and Windows builds are provided but have not been verified on real hardware —
 > issues specific to non-macOS environments may not be addressed promptly.
 
-### macOS / Linux
+### Option A: Download binary (no Go required)
+
+1. Go to [Releases](https://github.com/ryosandesu/cclmonitor/releases) and download the archive for your platform:
+   - macOS (Apple Silicon): `cclmonitor_darwin_arm64.tar.gz`
+   - macOS (Intel): `cclmonitor_darwin_amd64.tar.gz`
+   - Linux (x86_64): `cclmonitor_linux_amd64.tar.gz`
+
+2. Extract and install:
+
+```sh
+tar -xzf cclmonitor_darwin_arm64.tar.gz  # adjust filename for your platform
+mkdir -p ~/bin
+mv cclmonitor cclmonitor-install cclmonitor-ui ~/bin/
+~/bin/cclmonitor-install
+```
+
+3. Add `~/bin/` to your PATH (if not already):
+
+```sh
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
+
+> **macOS note:** If macOS blocks the binary with an "unidentified developer" warning, run:
+> ```sh
+> xattr -dr com.apple.quarantine ~/bin/cclmonitor ~/bin/cclmonitor-install ~/bin/cclmonitor-ui
+> ```
+
+### Option B: Build from source (requires Go 1.26+)
 
 ```sh
 git clone https://github.com/ryosandesu/cclmonitor.git
@@ -97,7 +124,7 @@ Add `~/bin/` to your PATH to run the commands from anywhere:
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
 
-### Windows
+#### Windows (build from source)
 
 `make` is not available by default on Windows. Build manually with PowerShell:
 

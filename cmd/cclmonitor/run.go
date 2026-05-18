@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -18,13 +19,24 @@ func run(r io.Reader, w io.Writer, globalCfgPath string) int {
 	if err != nil {
 		return 0
 	}
-	value, err := hookio.MatchValue(payload)
-	if err != nil {
+	value, matchErr := hookio.MatchValue(payload)
+	if matchErr != nil && !errors.Is(matchErr, hookio.ErrUnsupportedTool) {
 		return 0
 	}
 
 	cfg := loadMergedConfig(globalCfgPath, payload.Cwd)
 	cfg = config.ExpandCwd(cfg, payload.Cwd)
+
+	if errors.Is(matchErr, hookio.ErrUnsupportedTool) {
+		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
+			Time:      time.Now(),
+			SessionID: payload.SessionID,
+			ToolUseID: payload.ToolUseID,
+			ToolName:  payload.ToolName,
+			Verdict:   "pending",
+		})
+		return 0
+	}
 
 	rules := cfg.Rules[payload.ToolName]
 	verdict, err := match.Evaluate(rules, value)
@@ -61,13 +73,24 @@ func runPost(r io.Reader, globalCfgPath string) int {
 	if err != nil {
 		return 0
 	}
-	value, err := hookio.MatchValue(payload)
-	if err != nil {
+	value, matchErr := hookio.MatchValue(payload)
+	if matchErr != nil && !errors.Is(matchErr, hookio.ErrUnsupportedTool) {
 		return 0
 	}
 
 	cfg := loadMergedConfig(globalCfgPath, payload.Cwd)
 	cfg = config.ExpandCwd(cfg, payload.Cwd)
+
+	if errors.Is(matchErr, hookio.ErrUnsupportedTool) {
+		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
+			Time:      time.Now(),
+			SessionID: payload.SessionID,
+			ToolUseID: payload.ToolUseID,
+			ToolName:  payload.ToolName,
+			Verdict:   "untracked",
+		})
+		return 0
+	}
 
 	rules := cfg.Rules[payload.ToolName]
 	verdict, err := match.Evaluate(rules, value)

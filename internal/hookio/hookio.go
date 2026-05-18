@@ -2,8 +2,11 @@ package hookio
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 )
+
+var ErrUnsupportedTool = errors.New("unsupported tool")
 
 type ToolResponse struct {
 	Interrupted bool `json:"interrupted"`
@@ -74,6 +77,6 @@ func MatchValue(p *HookPayload) (string, error) {
 		}
 		return in.FilePath, nil
 	default:
-		return "", nil
+		return "", ErrUnsupportedTool
 	}
 }

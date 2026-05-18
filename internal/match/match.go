@@ -39,9 +39,13 @@ func Evaluate(rules config.ToolRules, value string) (Verdict, error) {
 func matchesAny(rules []config.Rule, value string) (bool, error) {
 	for _, r := range rules {
 		if r.Regex != "" {
-			re, err := regexp.Compile(r.Regex)
-			if err != nil {
-				return false, err
+			re := r.CompiledRe
+			if re == nil {
+				var err error
+				re, err = regexp.Compile(r.Regex)
+				if err != nil {
+					return false, err
+				}
 			}
 			if re.MatchString(value) {
 				return true, nil

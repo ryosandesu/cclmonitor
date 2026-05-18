@@ -68,6 +68,19 @@ func TestLoadFile_NotFound(t *testing.T) {
 	}
 }
 
+func TestLoadFile_InvalidRegex(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "cclmonitor.yaml")
+	content := "rules:\n  Bash:\n    deny:\n      - regex: '[invalid'\n"
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := LoadFile(path)
+	if err == nil {
+		t.Error("expected error for invalid regex")
+	}
+}
+
 func TestExpandCwd(t *testing.T) {
 	cfg := &Config{
 		Rules: map[string]ToolRules{

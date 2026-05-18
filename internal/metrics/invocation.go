@@ -13,7 +13,7 @@ type Invocation struct {
 	ToolName  string
 	Value     string
 	StartedAt time.Time
-	Outcome   string // executed | denied | cancelled | unknown | interrupted
+	Outcome   string // executed | denied | cancelled | unknown | untracked | interrupted
 	SessionID string
 }
 
