@@ -190,13 +190,19 @@ func loadMergedConfig(globalPath, cwd string) *config.Config {
 		global = &config.Config{}
 	}
 
+	var out *config.Config
 	projectPath := filepath.Join(cwd, ".claude", "cclmonitor.yaml")
 	project, err := config.LoadFile(projectPath)
 	if err != nil {
-		return global
+		out = global
+	} else {
+		out = config.Merge(global, project)
 	}
 
-	return config.Merge(global, project)
+	if out.DefaultVerdict == "" {
+		out.DefaultVerdict = "allow"
+	}
+	return out
 }
 
 func verdictString(v match.Verdict) string {
