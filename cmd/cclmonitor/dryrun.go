@@ -13,10 +13,22 @@ func runDryRun(out io.Writer, toolName, value, cwd, globalCfgPath string) int {
 	cfg = config.ExpandCwd(cfg, cwd)
 
 	rules := cfg.Rules[toolName]
-	verdict, err := match.Evaluate(rules, value)
+
+	var verdict match.Verdict
+	var err error
+	if toolName == "Bash" {
+		tokens := match.SplitBashCommands(value)
+		verdict, err = evaluateTokens(rules, tokens)
+	} else {
+		verdict, err = match.Evaluate(rules, value)
+	}
 	if err != nil {
 		fmt.Fprintf(out, "error: %v\n", err)
 		return 1
+	}
+
+	if verdict == match.Unknown && cfg.DefaultVerdict == "deny" {
+		verdict = match.Deny
 	}
 
 	fmt.Fprintf(out, "tool:    %s\n", toolName)

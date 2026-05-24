@@ -27,3 +27,4 @@ docs/
 # Claude Code (developer-specific)
 .claude/
 CLAUDE.md
+_workflow

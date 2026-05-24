@@ -10,8 +10,9 @@ import (
 )
 
 type Config struct {
-	EventLog EventLogConfig       `yaml:"eventlog"`
-	Rules    map[string]ToolRules `yaml:"rules"`
+	DefaultVerdict string               `yaml:"default_verdict"` // "deny" | "allow" | ""
+	EventLog       EventLogConfig       `yaml:"eventlog"`
+	Rules          map[string]ToolRules `yaml:"rules"`
 }
 
 type EventLogConfig struct {
@@ -39,6 +40,9 @@ func LoadFile(path string) (*Config, error) {
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
+	}
+	if cfg.DefaultVerdict != "" && cfg.DefaultVerdict != "allow" && cfg.DefaultVerdict != "deny" {
+		return nil, fmt.Errorf("invalid default_verdict %q: must be \"allow\" or \"deny\"", cfg.DefaultVerdict)
 	}
 	for tool, rules := range cfg.Rules {
 		allow, err := compileRules(rules.Allow)
@@ -72,8 +76,9 @@ func compileRules(rules []Rule) ([]Rule, error) {
 // ExpandCwd returns a new Config with <cwd> tokens in glob patterns replaced by cwd.
 func ExpandCwd(cfg *Config, cwd string) *Config {
 	out := &Config{
-		EventLog: cfg.EventLog,
-		Rules:    make(map[string]ToolRules, len(cfg.Rules)),
+		DefaultVerdict: cfg.DefaultVerdict,
+		EventLog:       cfg.EventLog,
+		Rules:          make(map[string]ToolRules, len(cfg.Rules)),
 	}
 	for tool, rules := range cfg.Rules {
 		out.Rules[tool] = ToolRules{
@@ -105,8 +110,12 @@ func Merge(global, project *Config) *Config {
 		return global
 	}
 	out := &Config{
-		EventLog: global.EventLog,
-		Rules:    make(map[string]ToolRules),
+		DefaultVerdict: global.DefaultVerdict,
+		EventLog:       global.EventLog,
+		Rules:          make(map[string]ToolRules),
+	}
+	if project.DefaultVerdict != "" {
+		out.DefaultVerdict = project.DefaultVerdict
 	}
 	for tool, rules := range global.Rules {
 		out.Rules[tool] = rules
