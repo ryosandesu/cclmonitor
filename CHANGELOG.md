@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.10.0](https://github.com/ryosandesu/cclmonitor/compare/v0.9.1...v0.10.0) (2026-05-24)
+
+
+### Features
+
+* split bash commands and add default_verdict config ([0a5d1de](https://github.com/ryosandesu/cclmonitor/commit/0a5d1de452e60769f59232a8af118a1356217905))
+* split bash commands and add default_verdict config ([726df1e](https://github.com/ryosandesu/cclmonitor/commit/726df1ec74f46e2aa3a8bba5f59aa13a446ff10d))
+
+
+### Bug Fixes
+
+* DefaultVerdict ([d092a45](https://github.com/ryosandesu/cclmonitor/commit/d092a454e378a981a1830a6f31c09bcfe3fb1e7d))
+
 ## [0.9.1](https://github.com/ryosandesu/cclmonitor/compare/v0.9.0...v0.9.1) (2026-05-18)
 
 
