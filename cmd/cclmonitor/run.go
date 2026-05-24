@@ -39,10 +39,21 @@ func run(r io.Reader, w io.Writer, globalCfgPath string) int {
 	}
 
 	rules := cfg.Rules[payload.ToolName]
-	verdict, err := match.Evaluate(rules, value)
+
+	var verdict match.Verdict
+	if payload.ToolName == "Bash" {
+		tokens := match.SplitBashCommands(value)
+		verdict, err = evaluateTokens(rules, tokens)
+	} else {
+		verdict, err = match.Evaluate(rules, value)
+	}
 	if err != nil {
 		return 0
 	}
+
+	// default_verdict: deny blocks unknown commands but logs them as "unknown"
+	// so Coverage and Unknown counts remain meaningful in the UI
+	blockedByDefault := verdict == match.Unknown && cfg.DefaultVerdict == "deny"
 
 	if verdict == match.Deny {
 		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
@@ -57,6 +68,19 @@ func run(r io.Reader, w io.Writer, globalCfgPath string) int {
 		return 2
 	}
 
+	if blockedByDefault {
+		_ = eventlog.Write(cfg.EventLog, eventlog.Event{
+			Time:      time.Now(),
+			SessionID: payload.SessionID,
+			ToolUseID: payload.ToolUseID,
+			ToolName:  payload.ToolName,
+			Value:     value,
+			Verdict:   "unknown",
+		})
+		writeBlockReason(w, payload.ToolName, value)
+		return 2
+	}
+
 	_ = eventlog.Write(cfg.EventLog, eventlog.Event{
 		Time:      time.Now(),
 		SessionID: payload.SessionID,
@@ -66,6 +90,28 @@ func run(r io.Reader, w io.Writer, globalCfgPath string) int {
 		Verdict:   "pending",
 	})
 	return 0
+}
+
+// evaluateTokens evaluates each token against rules.
+// One Deny short-circuits to Deny; Unknown demotes overall from Allow to Unknown.
+func evaluateTokens(rules config.ToolRules, tokens []string) (match.Verdict, error) {
+	overall := match.Allow
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+		v, err := match.Evaluate(rules, token)
+		if err != nil {
+			return match.Unknown, err
+		}
+		if v == match.Deny {
+			return match.Deny, nil
+		}
+		if v == match.Unknown {
+			overall = match.Unknown
+		}
+	}
+	return overall, nil
 }
 
 func runPost(r io.Reader, globalCfgPath string) int {
@@ -93,7 +139,14 @@ func runPost(r io.Reader, globalCfgPath string) int {
 	}
 
 	rules := cfg.Rules[payload.ToolName]
-	verdict, err := match.Evaluate(rules, value)
+
+	var verdict match.Verdict
+	if payload.ToolName == "Bash" {
+		tokens := match.SplitBashCommands(value)
+		verdict, err = evaluateTokens(rules, tokens)
+	} else {
+		verdict, err = match.Evaluate(rules, value)
+	}
 	if err != nil {
 		return 0
 	}

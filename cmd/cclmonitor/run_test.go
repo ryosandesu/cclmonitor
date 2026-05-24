@@ -11,6 +11,10 @@ import (
 
 func writeCfg(t *testing.T, dir, content string) string {
 	t.Helper()
+	// inject logdir when missing so tests never write to the real ~/.claude/
+	if !strings.Contains(content, "logdir:") {
+		content = "eventlog:\n  logdir: " + dir + "\n" + content
+	}
 	path := filepath.Join(dir, "cclmonitor.yaml")
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		t.Fatal(err)
@@ -184,6 +188,8 @@ rules:
 }
 
 func TestRun_NoConfigReturns0(t *testing.T) {
+	// redirect HOME so resolveDir("") writes to a temp dir instead of ~/.claude/
+	t.Setenv("HOME", t.TempDir())
 	code := run(strings.NewReader(bashPayload("anything", "/tmp", "s1")), io.Discard, "/nonexistent/cclmonitor.yaml")
 	if code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
@@ -297,6 +303,41 @@ func TestRunPost_UntrackedToolWritesUntrackedLog(t *testing.T) {
 	data := readTodayLog(t, logDir)
 	if !strings.Contains(string(data), "untracked") {
 		t.Errorf("log should contain 'untracked', got: %s", data)
+	}
+}
+
+func TestRun_DefaultVerdictDenyUnknownReturns2(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := writeCfg(t, dir, `
+default_verdict: deny
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	code := run(strings.NewReader(bashPayload("git status", dir, "s1")), io.Discard, cfgPath)
+	if code != 2 {
+		t.Errorf("exit code = %d, want 2", code)
+	}
+}
+
+func TestRun_DefaultVerdictDenyUnknownWritesUnknownLog(t *testing.T) {
+	dir := t.TempDir()
+	logDir := filepath.Join(dir, "logs")
+	cfgPath := writeCfg(t, dir, `
+default_verdict: deny
+eventlog:
+  logdir: `+logDir+`
+rules:
+  Bash:
+    allow:
+      - regex: '^ls\b'
+`)
+	run(strings.NewReader(bashPayload("git status", dir, "s1")), io.Discard, cfgPath)
+
+	data := readTodayLog(t, logDir)
+	if !strings.Contains(string(data), "unknown") {
+		t.Errorf("log should contain 'unknown', got: %s", data)
 	}
 }
 
